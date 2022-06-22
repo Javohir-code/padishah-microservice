@@ -12,12 +12,64 @@ datasource db {
 
 model User {
   id Int @default(autoincrement()) @id
-  fullName String? @db.VarChar(255) 
+  firstName String? @db.VarChar(255) 
+  lastName String? @db.VarChar(255)
+  middleName String? @db.VarChar(255)
+  email String? @db.VarChar(255)
+  password String? @db.VarChar(255)
   msisdn String? @db.VarChar(50) @unique
-  region String? @db.VarChar(50)
-  district String? @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+  addresses Addresses[]
+  role RoleUsers[]
+}
+
+model Addresses {
+  id Int @default(autoincrement()) @id
+  apartment String? @db.VarChar(255)
+  home String? @db.VarChar(255)
+  latitude String @db.VarChar(255)
+  longitude String @db.VarChar(255)
+  domofon String? @db.VarChar(255)
+  name String? @db.VarChar(255)
   address String? @db.VarChar(255)
-  address2 String? @db.VarChar(255)
+  status UserStatus?
+  createdAt DateTime @default(now())
+  userAddress User @relation(fields: [userId], references: [id])
+  userRegion Regions @relation(fields: [regionId], references: [id])
+  userDistrict Districts @relation(fields: [districtId], references: [id])
+  userId Int
+  regionId Int
+  districtId Int
+}
+
+model Regions {
+  id Int @default(autoincrement()) @id
+  name String @db.VarChar(255)
+  createdAt DateTime @default(now())
+  addresses Addresses[]
+}
+
+model Districts {
+  id Int @default(autoincrement()) @id
+  name String @db.VarChar(255)
+  createdAt DateTime @default(now())
+  addresses Addresses[]
+}
+
+model Roles {
+  id Int @default(autoincrement()) @id
+  name String @db.VarChar(255)
+  createdAt DateTime @default(now())
+  roleUser RoleUsers[]
+}
+
+model RoleUsers {
+  id Int @default(autoincrement()) @id
+  user User @relation(fields: [userId], references: [id])
+  role Roles @relation(fields: [roleId], references: [id])
+  userId Int
+  roleId Int
 }
 
 model Otp {
@@ -30,8 +82,37 @@ model Otp {
   status OtpStatus @default(UNCONFIRMED)
 }
 
+model Merchant {
+  id Int @default(autoincrement()) @id
+  msisdn String @db.VarChar(50) @unique
+  firstName String @db.VarChar(255)
+  lastName String @db.VarChar(255)
+  middleName String @db.VarChar(255)
+  password String @db.VarChar(255)
+  email String @db.VarChar(255)
+  createdAt DateTime @default(now())
+}
+
+model MerchantCompany {
+  id Int @default(autoincrement()) @id
+  inn String @db.VarChar(25) 
+  name String @db.VarChar(255)
+  addresses String 
+}
 
 enum OtpStatus {
   UNCONFIRMED
   CONFIRMED
+}
+
+enum RolesEnum {
+   CLIENT
+   SELLER
+   ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCK
+  INACTIVE
 }

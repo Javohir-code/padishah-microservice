@@ -1,35 +1,40 @@
 import {
+  IsArray,
+  IsEmail,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { AddressDto } from './address.details.dto';
 
 export class UserDetailsDto {
   @IsString()
   @MinLength(4)
   @MaxLength(50)
   @IsNotEmpty()
-  fullName: string;
+  firstName: string;
 
   @IsString()
-  @IsNotEmpty()
-  region: string;
-
-  @IsString()
-  @IsNotEmpty()
-  district: string;
-
-  @IsString()
-  @MinLength(5)
-  @MaxLength(100)
-  @IsNotEmpty()
-  address: string;
-
-  @IsString()
-  @MinLength(5)
+  @MinLength(2)
   @MaxLength(50)
+  @IsNotEmpty()
+  lastName: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  middleName: string;
+
+  @IsEmail()
   @IsOptional()
-  address2: string;
+  email: string;
+
+  @IsString()
+  @IsOptional()
+  msisdn: string;
+
+  @IsOptional()
+  addresses: Array<AddressDto>;
 }

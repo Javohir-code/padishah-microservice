@@ -11,6 +11,7 @@ import { IRequestUser } from '../interfaces/request-user.interface';
 import { User } from '@prisma/client';
 import fetch from 'cross-fetch';
 import { v4 as uuidv4 } from 'uuid';
+import { AddressDto } from '../dto/address.details.dto';
 
 @Injectable()
 export class UserService {
@@ -23,19 +24,25 @@ export class UserService {
   async addUserDetails(
     IUser: IRequestUser,
     userDetailsDto: UserDetailsDto,
+    addressDetailsDto: AddressDto,
   ): Promise<{ user: User; accessToken: string }> {
     const foundUser = await this.findUserByMsisdn(IUser.msisdn);
     if (foundUser) {
       const user = await this.prisma.user.update({
         where: { msisdn: foundUser.msisdn },
         data: {
-          fullName: userDetailsDto.fullName,
-          region: userDetailsDto.region,
-          district: userDetailsDto.district,
-          address: userDetailsDto.address,
-          address2: userDetailsDto.address2,
+          firstName: userDetailsDto?.firstName,
+          lastName: userDetailsDto?.lastName,
+          middleName: userDetailsDto?.middleName,
+          email: userDetailsDto?.email,
+          msisdn: userDetailsDto?.msisdn,
         },
       });
+      // const newAddresses = await this.prisma.addresses.createMany({
+      //   data: [
+      //     {}
+      //   ],
+      // });
       const payload = { msisdn: user.msisdn };
       const accessToken = await this.jwtService.sign(payload);
       return { user: user, accessToken: accessToken };

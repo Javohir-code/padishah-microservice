@@ -20,7 +20,7 @@ model User {
   password String? @db.VarChar(255)
   msisdn String @db.VarChar(50) @unique
   status UserStatus @default(ACTIVE)
-  language Language?
+  language Language @default(UZ)
   lastLogin DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime?
@@ -119,4 +119,5 @@ enum UserStatus {
 enum Language {
   UZ
   RU
+  ENG
 }

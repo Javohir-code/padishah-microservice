@@ -1,5 +1,6 @@
 import {
   IsEmail,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -44,6 +45,7 @@ export class UserDetailsDto {
   status: UserStatus;
 
   @IsString()
+  @IsIn([Language.UZ, Language.RU, Language.ENG])
   @IsOptional()
   language: Language;
 }

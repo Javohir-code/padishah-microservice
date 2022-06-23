@@ -12,8 +12,11 @@ import { User } from '@prisma/client';
 import fetch from 'cross-fetch';
 import { v4 as uuidv4 } from 'uuid';
 import { addSeconds } from 'date-fns';
+import * as moment from 'moment';
 import { AddressDto } from '../dto/address.details.dto';
 import { LoginInfo } from '../dto/login-info.dto';
+import { RegionDto } from '../dto/region.details.dto';
+import { DistrictDto } from '../dto/district.details.dto';
 
 @Injectable()
 export class UserService {
@@ -26,10 +29,10 @@ export class UserService {
   async addUserDetails(
     IUser: IRequestUser,
     userDetailsDto: UserDetailsDto,
-    addressDetailsDto: AddressDto,
   ): Promise<{ user: User; accessToken: string }> {
     const foundUser = await this.findUserByMsisdn(IUser.msisdn);
     if (foundUser) {
+      const updatedAt = moment().format('YYYY-MM-DDTHH:mm:ss.SSS');
       const user = await this.prisma.user.update({
         where: { msisdn: foundUser.msisdn },
         data: {
@@ -37,19 +40,27 @@ export class UserService {
           lastName: userDetailsDto?.lastName,
           middleName: userDetailsDto?.middleName,
           email: userDetailsDto?.email,
-          msisdn: userDetailsDto?.msisdn,
+          status: userDetailsDto?.status,
+          updatedAt: updatedAt,
         },
       });
-      // const newAddresses = await this.prisma.addresses.createMany({
-      //   data: [
-      //     {}
-      //   ],
-      // });
       const payload = { msisdn: user.msisdn };
       const accessToken = await this.jwtService.sign(payload);
       return { user: user, accessToken: accessToken };
     }
   }
+
+  // async addUserAddress(IUser: IRequestUser, addressDetails: AddressDto) {
+  //   const newAddress = await this.prisma.userAddresses.upsert({
+  //     where: { userId: IUser.msisdn },
+  //     update: {
+  //       latitude: addressDetails?.latitude,
+  //       longitude: addressDetails?.longitude,
+  //       name: addressDetails?.name,
+  //       street: addressDetails?.street,
+  //     },
+  //   });
+  // }
 
   async loginUser(loginInfo: LoginInfo) {
     const code = this.generate4RandomDigit();
@@ -77,9 +88,6 @@ export class UserService {
       }),
     });
     const loginDto = { msisdn: loginInfo.msisdn, code: code.toString() };
-    // await this.prisma.verifyCodes.upsert({
-    //   data: { msisdn: loginDto.msisdn, code: loginDto.code },
-    // });
     const expiresIn = addSeconds(
       new Date(),
       this.configService.get('expiresIn'),

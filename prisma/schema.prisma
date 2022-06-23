@@ -11,94 +11,93 @@ datasource db {
 }
 
 model User {
+  @@map(name: "users")
   id Int @default(autoincrement()) @id
   firstName String? @db.VarChar(255) 
   lastName String? @db.VarChar(255)
   middleName String? @db.VarChar(255)
   email String? @db.VarChar(255)
   password String? @db.VarChar(255)
-  msisdn String? @db.VarChar(50) @unique
+  msisdn String @db.VarChar(50) @unique
+  status UserStatus @default(ACTIVE)
+  language Language?
+  lastLogin DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime?
-  addresses Addresses[]
+  deletedAt DateTime?
+  addresses UserAddresses[]
   role RoleUsers[]
 }
 
-model Addresses {
+model UserAddresses {
+  @@map(name: "userAddresses")
   id Int @default(autoincrement()) @id
-  apartment String? @db.VarChar(255)
-  home String? @db.VarChar(255)
+  userId Int
   latitude String @db.VarChar(255)
   longitude String @db.VarChar(255)
-  domofon String? @db.VarChar(255)
   name String? @db.VarChar(255)
+  street String? @db.VarChar(255)
+  city String? @db.VarChar(255)
+  home String? @db.VarChar(255)
+  apartment String? @db.VarChar(255)
+  comment String @db.VarChar(1000)
+  domofon String? @db.VarChar(255)
   address String? @db.VarChar(255)
-  status UserStatus?
+  regionId Int
+  districtId Int
   createdAt DateTime @default(now())
+  updatedAt DateTime?
   userAddress User @relation(fields: [userId], references: [id])
   userRegion Regions @relation(fields: [regionId], references: [id])
   userDistrict Districts @relation(fields: [districtId], references: [id])
-  userId Int
-  regionId Int
-  districtId Int
 }
 
 model Regions {
+  @@map(name: "regions")
   id Int @default(autoincrement()) @id
   name String @db.VarChar(255)
   createdAt DateTime @default(now())
-  addresses Addresses[]
+  addresses UserAddresses[]
 }
 
 model Districts {
+  @@map(name: "districts")
   id Int @default(autoincrement()) @id
   name String @db.VarChar(255)
   createdAt DateTime @default(now())
-  addresses Addresses[]
+  addresses UserAddresses[]
 }
 
 model Roles {
+  @@map(name: "roles")
   id Int @default(autoincrement()) @id
   name String @db.VarChar(255)
-  createdAt DateTime @default(now())
   roleUser RoleUsers[]
 }
 
 model RoleUsers {
+  @@map(name: "roleUsers")
   id Int @default(autoincrement()) @id
-  user User @relation(fields: [userId], references: [id])
-  role Roles @relation(fields: [roleId], references: [id])
   userId Int
   roleId Int
+  user User @relation(fields: [userId], references: [id])
+  role Roles @relation(fields: [roleId], references: [id])
 }
 
-model Otp {
-  id Int @default(autoincrement()) @id
-  identifier String @db.VarChar(50) @unique
-  code Int 
-  createdAt DateTime @default(now())
-  expiresAt DateTime?
-  attempts Int @db.SmallInt @default(0)
-  status OtpStatus @default(UNCONFIRMED)
-}
-
-model Merchant {
+model VerifyCodes {
+  @@map("verifyCodes")
   id Int @default(autoincrement()) @id
   msisdn String @db.VarChar(50) @unique
-  firstName String @db.VarChar(255)
-  lastName String @db.VarChar(255)
-  middleName String @db.VarChar(255)
-  password String @db.VarChar(255)
-  email String @db.VarChar(255)
+  email String? @db.VarChar(255) @unique
+  code String 
+  status OtpStatus @default(UNCONFIRMED)
+  ip String?
+  expiredAt DateTime?
   createdAt DateTime @default(now())
+  updatedAt DateTime?
+  attempts Int @db.SmallInt @default(0)
 }
 
-model MerchantCompany {
-  id Int @default(autoincrement()) @id
-  inn String @db.VarChar(25) 
-  name String @db.VarChar(255)
-  addresses String 
-}
 
 enum OtpStatus {
   UNCONFIRMED
@@ -115,4 +114,9 @@ enum UserStatus {
   ACTIVE
   BLOCK
   INACTIVE
+}
+
+enum Language {
+  UZ
+  RU
 }

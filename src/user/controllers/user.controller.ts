@@ -2,6 +2,7 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CurrentUser } from 'src/global/decorators/current-user.decorator';
 import { AddressDto } from '../dto/address.details.dto';
+import { LoginInfo } from '../dto/login-info.dto';
 import { UserDetailsDto } from '../dto/user.details.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { IRequestUser } from '../interfaces/request-user.interface';
@@ -26,8 +27,8 @@ export class UserController {
   }
 
   @Post('login')
-  async loginUser(@Body('msisdn') msisdn: string) {
-    return await this.userService.loginUser(msisdn);
+  async loginUser(@Body() loginInfo: LoginInfo) {
+    return await this.userService.loginUser(loginInfo);
   }
 
   @Post('verify')

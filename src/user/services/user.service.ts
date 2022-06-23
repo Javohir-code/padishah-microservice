@@ -11,7 +11,9 @@ import { IRequestUser } from '../interfaces/request-user.interface';
 import { User } from '@prisma/client';
 import fetch from 'cross-fetch';
 import { v4 as uuidv4 } from 'uuid';
+import { addSeconds } from 'date-fns';
 import { AddressDto } from '../dto/address.details.dto';
+import { LoginInfo } from '../dto/login-info.dto';
 
 @Injectable()
 export class UserService {
@@ -49,7 +51,7 @@ export class UserService {
     }
   }
 
-  async loginUser(msisdn: string) {
+  async loginUser(loginInfo: LoginInfo) {
     const code = this.generate4RandomDigit();
     const res = await fetch(this.configService.get('sms_service.url'), {
       method: 'POST',
@@ -62,7 +64,7 @@ export class UserService {
       body: JSON.stringify({
         messages: [
           {
-            recipient: msisdn,
+            recipient: loginInfo.msisdn,
             'message-id': `pad${uuidv4().substr(0, 15)}`,
             sms: {
               originator: this.configService.get('sms_service.orginator'),
@@ -74,27 +76,47 @@ export class UserService {
         ],
       }),
     });
-    const loginDto = { msisdn: msisdn, code: code };
-    await this.prisma.otp.create({
-      data: { identifier: loginDto.msisdn, code: loginDto.code },
+    const loginDto = { msisdn: loginInfo.msisdn, code: code.toString() };
+    // await this.prisma.verifyCodes.upsert({
+    //   data: { msisdn: loginDto.msisdn, code: loginDto.code },
+    // });
+    const expiresIn = addSeconds(
+      new Date(),
+      this.configService.get('expiresIn'),
+    );
+    await this.prisma.verifyCodes.upsert({
+      where: {
+        msisdn: loginDto.msisdn,
+      },
+      update: { code: loginDto.code, expiredAt: expiresIn },
+      create: {
+        msisdn: loginDto.msisdn,
+        code: loginDto.code,
+        ip: loginInfo.ipAddress,
+      },
     });
-    const foundUser = await this.findUserMsisdnWise(msisdn);
+    const foundUser = await this.findUserMsisdnWise(loginInfo.msisdn);
     if (foundUser == true) {
-      await this.prisma.user.create({ data: { msisdn: msisdn } });
+      await this.prisma.user.create({
+        data: {
+          msisdn: loginInfo.msisdn,
+        },
+      });
     }
 
     return res;
   }
 
   async verifyTheNumber(msisdn: string): Promise<{ accessToken: string }> {
-    const loginInfo = await this.prisma.otp.findFirst({
-      where: { identifier: msisdn },
+    const loginInfo = await this.prisma.verifyCodes.findFirst({
+      where: { msisdn: msisdn, expiredAt: { gt: new Date() } },
     });
-    if (!loginInfo) throw new BadRequestException('Invalid Code!');
+    if (!loginInfo) throw new BadRequestException('Invalid or Expired Code!');
 
     const payload = { msisdn: msisdn };
     const accessToken = await this.jwtService.sign(payload);
-    const result = await this.prisma.otp.delete({
+    const result = await this.prisma.verifyCodes.update({
+      data: { attempts: ++loginInfo.attempts },
       where: { id: loginInfo.id },
     });
     console.log(result);

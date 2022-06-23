@@ -2,6 +2,7 @@ export default () => ({
   env: process.env.APP_ENV,
   port: Number(process.env.PORT),
   jwtSecret: process.env.USER_JWT_SECRET,
+  expiresIn: process.env.ExpiresIn,
   sms_service: {
     url: process.env.SMS_API,
     username: process.env.SMS_USERNAME,

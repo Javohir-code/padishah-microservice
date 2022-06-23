@@ -1,5 +1,4 @@
 import {
-  IsArray,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -7,7 +6,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { AddressDto } from './address.details.dto';
+import { Language } from '../enums/language.enum';
+import { UserStatus } from '../enums/user-status.enum';
 
 export class UserDetailsDto {
   @IsString()
@@ -33,8 +33,17 @@ export class UserDetailsDto {
 
   @IsString()
   @IsOptional()
+  password: string;
+
+  @IsString()
+  @IsOptional()
   msisdn: string;
 
+  @IsString()
   @IsOptional()
-  addresses: Array<AddressDto>;
+  status: UserStatus;
+
+  @IsString()
+  @IsOptional()
+  language: Language;
 }

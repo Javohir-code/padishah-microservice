@@ -91,6 +91,7 @@ model VerifyCodes {
   email String? @db.VarChar(255) @unique
   code String 
   status OtpStatus @default(UNCONFIRMED)
+  reason OtpReason @default(LOGIN)
   ip String?
   expiredAt DateTime?
   createdAt DateTime @default(now())
@@ -98,6 +99,10 @@ model VerifyCodes {
   attempts Int @db.SmallInt @default(0)
 }
 
+enum OtpReason {
+  FORGETPASSWORD
+  LOGIN
+}
 
 enum OtpStatus {
   UNCONFIRMED

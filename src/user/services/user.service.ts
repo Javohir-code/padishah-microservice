@@ -17,6 +17,7 @@ import { AddressDto } from '../dto/address.details.dto';
 import { LoginInfo } from '../dto/login-info.dto';
 import { RegionDto } from '../dto/region.details.dto';
 import { DistrictDto } from '../dto/district.details.dto';
+import { PasswordDto } from '../dto/password.details.dto';
 
 @Injectable()
 export class UserService {
@@ -51,13 +52,22 @@ export class UserService {
   }
 
   // async addUserAddress(IUser: IRequestUser, addressDetails: AddressDto) {
-  //   const newAddress = await this.prisma.userAddresses.upsert({
-  //     where: { userId: IUser.msisdn },
-  //     update: {
+  //   const user = await this.findUserByMsisdn(IUser.msisdn);
+  //   const newAddress = await this.prisma.userAddresses.create({
+  //     data: {
+  //       userId: user.id,
+  //       regionId: 1,
+  //       districtId: 1,
   //       latitude: addressDetails?.latitude,
   //       longitude: addressDetails?.longitude,
   //       name: addressDetails?.name,
   //       street: addressDetails?.street,
+  //       city: addressDetails?.city,
+  //       home: addressDetails?.home,
+  //       apartment: addressDetails?.apartment,
+  //       comment: addressDetails?.comment,
+  //       domofon: addressDetails?.domofon,
+  //       address: addressDetails?.address,
   //     },
   //   });
   // }
@@ -133,6 +143,24 @@ export class UserService {
     }
     return { accessToken };
   }
+
+  async addPassword(
+    IUser: IRequestUser,
+    passwordDto: PasswordDto,
+  ): Promise<void> {
+    if (passwordDto.password === passwordDto.repassword) {
+      await this.prisma.user.update({
+        where: { msisdn: IUser.msisdn },
+        data: {
+          password: passwordDto.password,
+        },
+      });
+    }
+
+    throw new BadRequestException('Passwords are not match!');
+  }
+
+  // async forgetPassword(msisdn: string) {}
 
   async findUserByMsisdn(msisdn: string): Promise<User> {
     const user = await this.prisma.user.findUnique({

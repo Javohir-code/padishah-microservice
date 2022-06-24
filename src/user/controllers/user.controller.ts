@@ -3,6 +3,7 @@ import { User } from '@prisma/client';
 import { CurrentUser } from 'src/global/decorators/current-user.decorator';
 import { AddressDto } from '../dto/address.details.dto';
 import { LoginInfo } from '../dto/login-info.dto';
+import { PasswordDto } from '../dto/password.details.dto';
 import { UserDetailsDto } from '../dto/user.details.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { IRequestUser } from '../interfaces/request-user.interface';
@@ -31,5 +32,13 @@ export class UserController {
     @Body('msisdn') msisdn: string,
   ): Promise<{ accessToken: string }> {
     return await this.userService.verifyTheNumber(msisdn);
+  }
+
+  @Put('add-password')
+  async addPassword(
+    @CurrentUser() user: IRequestUser,
+    @Body() passwordDto: PasswordDto,
+  ): Promise<void> {
+    await this.userService.addPassword(user, passwordDto);
   }
 }

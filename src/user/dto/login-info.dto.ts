@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { OtpReason } from '../enums/otp-reason.enum';
 
 export class LoginInfo {
   @IsString()
@@ -8,4 +9,9 @@ export class LoginInfo {
   @IsString()
   @IsOptional()
   ipAddress: string;
+
+  @IsString()
+  @IsIn([OtpReason.FORGETPASSWORD, OtpReason.LOGIN])
+  @IsOptional()
+  reason: OtpReason;
 }

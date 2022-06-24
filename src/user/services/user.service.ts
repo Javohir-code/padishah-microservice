@@ -9,15 +9,13 @@ import { PrismaService } from 'src/user/services/prisma.service';
 import { UserDetailsDto } from '../dto/user.details.dto';
 import { IRequestUser } from '../interfaces/request-user.interface';
 import { User } from '@prisma/client';
-import fetch from 'cross-fetch';
-import { v4 as uuidv4 } from 'uuid';
 import { addSeconds } from 'date-fns';
 import * as moment from 'moment';
-import { AddressDto } from '../dto/address.details.dto';
+import { hash } from 'bcryptjs';
 import { LoginInfo } from '../dto/login-info.dto';
-import { RegionDto } from '../dto/region.details.dto';
-import { DistrictDto } from '../dto/district.details.dto';
 import { PasswordDto } from '../dto/password.details.dto';
+import { OtpReason } from '../enums/otp-reason.enum';
+import { SecurityService } from './security.service';
 
 @Injectable()
 export class UserService {
@@ -25,6 +23,7 @@ export class UserService {
     private prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly securityService: SecurityService,
   ) {}
 
   async addUserDetails(
@@ -73,30 +72,9 @@ export class UserService {
   // }
 
   async loginUser(loginInfo: LoginInfo) {
-    const code = this.generate4RandomDigit();
-    const res = await fetch(this.configService.get('sms_service.url'), {
-      method: 'POST',
-      headers: {
-        login: this.configService.get('sms_service.username'),
-        password: this.configService.get('sms_service.password'),
-        Authorization: this.configService.get('sms_service.auth'),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            recipient: loginInfo.msisdn,
-            'message-id': `pad${uuidv4().substr(0, 15)}`,
-            sms: {
-              originator: this.configService.get('sms_service.orginator'),
-              content: {
-                text: `Код подтверждения для Padishah: ${code}`,
-              },
-            },
-          },
-        ],
-      }),
-    });
+    const { res, code } = await this.securityService.sendMessage(
+      loginInfo.msisdn,
+    );
     const loginDto = { msisdn: loginInfo.msisdn, code: code.toString() };
     const expiresIn = addSeconds(
       new Date(),
@@ -106,7 +84,12 @@ export class UserService {
       where: {
         msisdn: loginDto.msisdn,
       },
-      update: { code: loginDto.code, expiredAt: expiresIn },
+      update: {
+        code: loginDto.code,
+        expiredAt: expiresIn,
+        updatedAt: new Date(),
+        reason: loginInfo.reason ? loginInfo.reason : 'LOGIN',
+      },
       create: {
         msisdn: loginDto.msisdn,
         code: loginDto.code,
@@ -152,7 +135,7 @@ export class UserService {
       await this.prisma.user.update({
         where: { msisdn: IUser.msisdn },
         data: {
-          password: passwordDto.password,
+          password: await hash(passwordDto.password, 10),
         },
       });
     }
@@ -160,7 +143,52 @@ export class UserService {
     throw new BadRequestException('Passwords are not match!');
   }
 
-  // async forgetPassword(msisdn: string) {}
+  async getForgetPasswordOtp(msisdn: string) {
+    const { res, code } = await this.securityService.sendMessage(msisdn);
+    const user = await this.findUserByMsisdn(msisdn);
+    if (user) {
+      const expiresIn = addSeconds(
+        new Date(),
+        this.configService.get('expiresIn'),
+      );
+
+      await this.prisma.verifyCodes.update({
+        where: { msisdn: msisdn },
+        data: {
+          code: code.toString(),
+          reason: OtpReason.FORGETPASSWORD,
+          updatedAt: new Date(),
+          expiredAt: expiresIn,
+        },
+      });
+      return res;
+    }
+  }
+
+  async changePassword(
+    msisdn: string,
+    passwordDto: PasswordDto,
+  ): Promise<void> {
+    const loginInfo = await this.prisma.verifyCodes.findFirst({
+      where: {
+        msisdn: msisdn,
+        expiredAt: { gt: new Date() },
+        reason: OtpReason.FORGETPASSWORD,
+      },
+    });
+
+    if (!loginInfo) throw new BadRequestException('Invalid code');
+
+    if (passwordDto.password === passwordDto.repassword) {
+      await this.prisma.user.update({
+        where: { msisdn: msisdn },
+        data: {
+          password: await hash(passwordDto.password, 10),
+        },
+      });
+    }
+    throw new BadRequestException('passwords are not match!');
+  }
 
   async findUserByMsisdn(msisdn: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
@@ -181,10 +209,5 @@ export class UserService {
     } else {
       return false;
     }
-  }
-
-  private generate4RandomDigit() {
-    const val = Math.floor(1000 + Math.random() * 9000);
-    return val;
   }
 }

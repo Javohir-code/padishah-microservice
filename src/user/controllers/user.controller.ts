@@ -41,4 +41,17 @@ export class UserController {
   ): Promise<void> {
     await this.userService.addPassword(user, passwordDto);
   }
+
+  @Post('forget-password')
+  async getForgetPasswordOtp(@Body('msisdn') msisdn: string) {
+    await this.userService.getForgetPasswordOtp(msisdn);
+  }
+
+  @Put('password/change')
+  async changePassword(
+    @Body('msisdn') msisdn: string,
+    @Body() passwordDto: PasswordDto,
+  ): Promise<void> {
+    await this.userService.changePassword(msisdn, passwordDto);
+  }
 }

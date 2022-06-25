@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,11 +12,12 @@ import { IRequestUser } from '../interfaces/request-user.interface';
 import { User } from '@prisma/client';
 import { addSeconds } from 'date-fns';
 import * as moment from 'moment';
-import { hash } from 'bcryptjs';
+import { hash, compare } from 'bcryptjs';
 import { LoginInfo } from '../dto/login-info.dto';
 import { PasswordDto } from '../dto/password.details.dto';
 import { OtpReason } from '../enums/otp-reason.enum';
 import { SecurityService } from './security.service';
+import { JwtPayload, Tokens } from '../types';
 
 @Injectable()
 export class UserService {
@@ -29,7 +31,10 @@ export class UserService {
   async addUserDetails(
     IUser: IRequestUser,
     userDetailsDto: UserDetailsDto,
-  ): Promise<{ user: User; accessToken: string }> {
+  ): Promise<{
+    user: User;
+    tokens: { accessToken: string; refreshToken: string };
+  }> {
     const foundUser = await this.findUserByMsisdn(IUser.msisdn);
     if (foundUser) {
       const updatedAt = moment().format('YYYY-MM-DDTHH:mm:ss.SSS');
@@ -44,32 +49,18 @@ export class UserService {
           updatedAt: updatedAt,
         },
       });
-      const payload = { msisdn: user.msisdn };
-      const accessToken = await this.jwtService.sign(payload);
-      return { user: user, accessToken: accessToken };
+      const payload: JwtPayload = { userId: user.id, msisdn: user.msisdn };
+      const tokens = await this.securityService.getTokens(payload);
+      await this.securityService.updateRtHash(user.id, tokens.refresh_token);
+      return {
+        user: user,
+        tokens: {
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+        },
+      };
     }
   }
-
-  // async addUserAddress(IUser: IRequestUser, addressDetails: AddressDto) {
-  //   const user = await this.findUserByMsisdn(IUser.msisdn);
-  //   const newAddress = await this.prisma.userAddresses.create({
-  //     data: {
-  //       userId: user.id,
-  //       regionId: 1,
-  //       districtId: 1,
-  //       latitude: addressDetails?.latitude,
-  //       longitude: addressDetails?.longitude,
-  //       name: addressDetails?.name,
-  //       street: addressDetails?.street,
-  //       city: addressDetails?.city,
-  //       home: addressDetails?.home,
-  //       apartment: addressDetails?.apartment,
-  //       comment: addressDetails?.comment,
-  //       domofon: addressDetails?.domofon,
-  //       address: addressDetails?.address,
-  //     },
-  //   });
-  // }
 
   async loginUser(loginInfo: LoginInfo) {
     const { res, code } = await this.securityService.sendMessage(
@@ -108,14 +99,18 @@ export class UserService {
     return res;
   }
 
-  async verifyTheNumber(msisdn: string): Promise<{ accessToken: string }> {
+  async verifyTheNumber(msisdn: string): Promise<Tokens> {
     const loginInfo = await this.prisma.verifyCodes.findFirst({
       where: { msisdn: msisdn, expiredAt: { gt: new Date() } },
     });
     if (!loginInfo) throw new BadRequestException('Invalid or Expired Code!');
-
-    const payload = { msisdn: msisdn };
-    const accessToken = await this.jwtService.sign(payload);
+    const user = await this.prisma.user.findUnique({
+      where: { msisdn: loginInfo.msisdn },
+    });
+    if (!user) throw new NotFoundException('user credentials not found');
+    const payload: JwtPayload = { userId: user.id, msisdn: user.msisdn };
+    const tokens = await this.securityService.getTokens(payload);
+    await this.securityService.updateRtHash(user.id, tokens.refresh_token);
     const result = await this.prisma.verifyCodes.update({
       data: { attempts: ++loginInfo.attempts },
       where: { id: loginInfo.id },
@@ -124,7 +119,7 @@ export class UserService {
     if (result) {
       throw new NotFoundException(`msisdn with "${loginInfo.id}" not found!`);
     }
-    return { accessToken };
+    return tokens;
   }
 
   async addPassword(
@@ -210,4 +205,59 @@ export class UserService {
       return false;
     }
   }
+
+  async logout(userId: number): Promise<boolean> {
+    await this.prisma.user.updateMany({
+      where: {
+        id: userId,
+        refreshToken: {
+          not: null,
+        },
+      },
+      data: {
+        refreshToken: null,
+      },
+    });
+    return true;
+  }
+
+  async refreshTokens(userId: number, rt: string): Promise<Tokens> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.refreshToken)
+      throw new ForbiddenException('Access Denied!');
+
+    const rtMatches = await compare(user.refreshToken, rt);
+    if (!rtMatches) throw new ForbiddenException('Access Denied!');
+    const payload: JwtPayload = {
+      userId: user.id,
+      msisdn: user.msisdn,
+    };
+    const tokens = await this.securityService.getTokens(payload);
+    await this.securityService.updateRtHash(user.id, tokens.refresh_token);
+    return tokens;
+  }
+
+  // async addUserAddress(IUser: IRequestUser, addressDetails: AddressDto) {
+  //   const user = await this.findUserByMsisdn(IUser.msisdn);
+  //   const newAddress = await this.prisma.userAddresses.create({
+  //     data: {
+  //       userId: user.id,
+  //       regionId: 1,
+  //       districtId: 1,
+  //       latitude: addressDetails?.latitude,
+  //       longitude: addressDetails?.longitude,
+  //       name: addressDetails?.name,
+  //       street: addressDetails?.street,
+  //       city: addressDetails?.city,
+  //       home: addressDetails?.home,
+  //       apartment: addressDetails?.apartment,
+  //       comment: addressDetails?.comment,
+  //       domofon: addressDetails?.domofon,
+  //       address: addressDetails?.address,
+  //     },
+  //   });
+  // }
 }

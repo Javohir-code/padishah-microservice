@@ -21,6 +21,7 @@ model User {
   msisdn String @db.VarChar(50) @unique
   status UserStatus @default(ACTIVE)
   language Language @default(UZ)
+  refreshToken String?
   lastLogin DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime?

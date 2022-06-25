@@ -2,10 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import fetch from 'cross-fetch';
+import { hash } from 'bcryptjs';
+import { JwtPayload, Tokens } from '../types';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from './prisma.service';
 
 @Injectable()
 export class SecurityService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private jwtService: JwtService,
+    private prisma: PrismaService,
+  ) {}
 
   async sendMessage(msisdn) {
     const code = this.generate4RandomDigit();
@@ -39,5 +47,29 @@ export class SecurityService {
   private generate4RandomDigit() {
     const val = Math.floor(1000 + Math.random() * 9000);
     return val;
+  }
+
+  async getTokens(jwtPayload: JwtPayload): Promise<Tokens> {
+    const [at, rt] = await Promise.all([
+      this.jwtService.signAsync(jwtPayload, {
+        secret: this.configService.get('jwtAccessSecret'),
+        expiresIn: this.configService.get('accessExpiresIn'),
+      }),
+
+      this.jwtService.signAsync(jwtPayload, {
+        secret: this.configService.get('jwtRefreshSecret'),
+        expiresIn: this.configService.get('refreshExpiresIn'),
+      }),
+    ]);
+
+    return { access_token: at, refresh_token: rt };
+  }
+
+  async updateRtHash(userId: number, rt: string): Promise<void> {
+    const hashed = await hash(rt, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: hashed },
+    });
   }
 }

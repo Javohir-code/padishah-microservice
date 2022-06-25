@@ -6,23 +6,21 @@ import configuration from '../global/config/config';
 import { UserController } from './controllers/user.controller';
 import { SecurityService } from './services/security.service';
 import { UserService } from './services/user.service';
+import { AtStrategy, RtStrategy } from './strategies';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ load: [configuration] }),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('jwtSecret'),
-        signOptions: {
-          expiresIn: '24h',
-        },
-      }),
-      inject: [ConfigService],
-    }),
+    JwtModule.register({}),
   ],
   controllers: [UserController],
-  providers: [UserService, PrismaService, SecurityService],
+  providers: [
+    UserService,
+    PrismaService,
+    SecurityService,
+    AtStrategy,
+    RtStrategy,
+  ],
   exports: [UserService, PrismaService, SecurityService],
 })
 export class UserModule {}

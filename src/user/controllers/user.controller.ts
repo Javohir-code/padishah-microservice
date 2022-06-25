@@ -1,40 +1,56 @@
-import { Body, Controller, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CurrentUser } from 'src/global/decorators/current-user.decorator';
-import { AddressDto } from '../dto/address.details.dto';
+import { CurrentUserRt } from 'src/global/decorators/current-user-rt.decorator';
 import { LoginInfo } from '../dto/login-info.dto';
 import { PasswordDto } from '../dto/password.details.dto';
 import { UserDetailsDto } from '../dto/user.details.dto';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { AtAuthGuard } from '../guards/at-auth.guard';
+import { RtAuthGuard } from '../guards/rt-auth.guard';
 import { IRequestUser } from '../interfaces/request-user.interface';
 import { UserService } from '../services/user.service';
+import { Tokens } from '../types';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Put('add-details')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
   async addUser(
     @CurrentUser() user: IRequestUser,
     @Body() userDetailsDto: UserDetailsDto,
-  ): Promise<{ user: User; accessToken: string }> {
+  ): Promise<{
+    user: User;
+    tokens: { accessToken: string; refreshToken: string };
+  }> {
     return await this.userService.addUserDetails(user, userDetailsDto);
   }
 
-  @Post('login')
+  @Post('local/login')
+  @HttpCode(HttpStatus.OK)
   async loginUser(@Body() loginInfo: LoginInfo) {
     return await this.userService.loginUser(loginInfo);
   }
 
   @Post('verify')
-  async verifyTheNumber(
-    @Body('msisdn') msisdn: string,
-  ): Promise<{ accessToken: string }> {
+  @HttpCode(HttpStatus.OK)
+  async verifyTheNumber(@Body('msisdn') msisdn: string): Promise<Tokens> {
     return await this.userService.verifyTheNumber(msisdn);
   }
 
   @Put('add-password')
+  @UseGuards(AtAuthGuard)
+  @HttpCode(HttpStatus.OK)
   async addPassword(
     @CurrentUser() user: IRequestUser,
     @Body() passwordDto: PasswordDto,
@@ -53,5 +69,21 @@ export class UserController {
     @Body() passwordDto: PasswordDto,
   ): Promise<void> {
     await this.userService.changePassword(msisdn, passwordDto);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logoutUser(@CurrentUser() user: IRequestUser): Promise<boolean> {
+    return await this.userService.logout(user.userId);
+  }
+
+  @Post('refresh')
+  @UseGuards(RtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async refreshTokens(
+    @CurrentUser() user: IRequestUser,
+    @CurrentUserRt('refreshToken') rt: string,
+  ) {
+    return await this.userService.refreshTokens(user.userId, rt);
   }
 }

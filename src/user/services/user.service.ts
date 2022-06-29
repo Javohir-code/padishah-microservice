@@ -12,7 +12,7 @@ import { IRequestUser } from '../interfaces/request-user.interface';
 import { User } from '@prisma/client';
 import { addSeconds } from 'date-fns';
 import * as moment from 'moment';
-import { hash, compare } from 'bcryptjs';
+import * as argon from 'argon2';
 import { LoginInfo } from '../dto/login-info.dto';
 import { PasswordDto } from '../dto/password.details.dto';
 import { OtpReason } from '../enums/otp-reason.enum';
@@ -69,8 +69,9 @@ export class UserService {
     const loginDto = { msisdn: loginInfo.msisdn, code: code.toString() };
     const expiresIn = addSeconds(
       new Date(),
-      this.configService.get('expiresIn'),
+      this.configService.get('accessExpiresIn'),
     );
+    console.log(this.configService.get('accessExpiresIn'));
     await this.prisma.verifyCodes.upsert({
       where: {
         msisdn: loginDto.msisdn,
@@ -84,6 +85,7 @@ export class UserService {
       create: {
         msisdn: loginDto.msisdn,
         code: loginDto.code,
+        expiredAt: expiresIn,
         ip: loginInfo.ipAddress,
       },
     });
@@ -99,9 +101,9 @@ export class UserService {
     return res;
   }
 
-  async verifyTheNumber(msisdn: string): Promise<Tokens> {
+  async verifyTheNumber(msisdn: string, code: string): Promise<Tokens> {
     const loginInfo = await this.prisma.verifyCodes.findFirst({
-      where: { msisdn: msisdn, expiredAt: { gt: new Date() } },
+      where: { msisdn: msisdn, expiredAt: { gt: new Date() }, code: code },
     });
     if (!loginInfo) throw new BadRequestException('Invalid or Expired Code!');
     const user = await this.prisma.user.findUnique({
@@ -111,14 +113,13 @@ export class UserService {
     const payload: JwtPayload = { userId: user.id, msisdn: user.msisdn };
     const tokens = await this.securityService.getTokens(payload);
     await this.securityService.updateRtHash(user.id, tokens.refresh_token);
-    const result = await this.prisma.verifyCodes.update({
+    await this.prisma.verifyCodes.update({
       data: { attempts: ++loginInfo.attempts },
       where: { id: loginInfo.id },
     });
-    console.log(result);
-    if (result) {
-      throw new NotFoundException(`msisdn with "${loginInfo.id}" not found!`);
-    }
+    // if (result) {
+    //   throw new NotFoundException(`msisdn with "${loginInfo.id}" not found!`);
+    // }
     return tokens;
   }
 
@@ -130,9 +131,10 @@ export class UserService {
       await this.prisma.user.update({
         where: { msisdn: IUser.msisdn },
         data: {
-          password: await hash(passwordDto.password, 10),
+          password: await argon.hash(passwordDto.password),
         },
       });
+      return;
     }
 
     throw new BadRequestException('Passwords are not match!');
@@ -144,7 +146,7 @@ export class UserService {
     if (user) {
       const expiresIn = addSeconds(
         new Date(),
-        this.configService.get('expiresIn'),
+        this.configService.get('accessExpiresIn'),
       );
 
       await this.prisma.verifyCodes.update({
@@ -162,6 +164,7 @@ export class UserService {
 
   async changePassword(
     msisdn: string,
+    code: string,
     passwordDto: PasswordDto,
   ): Promise<void> {
     const loginInfo = await this.prisma.verifyCodes.findFirst({
@@ -169,6 +172,7 @@ export class UserService {
         msisdn: msisdn,
         expiredAt: { gt: new Date() },
         reason: OtpReason.FORGETPASSWORD,
+        code: code,
       },
     });
 
@@ -178,9 +182,10 @@ export class UserService {
       await this.prisma.user.update({
         where: { msisdn: msisdn },
         data: {
-          password: await hash(passwordDto.password, 10),
+          password: await argon.hash(passwordDto.password),
         },
       });
+      return;
     }
     throw new BadRequestException('passwords are not match!');
   }
@@ -226,11 +231,13 @@ export class UserService {
       where: { id: userId },
     });
 
+    console.log(user);
+
     if (!user || !user.refreshToken)
       throw new ForbiddenException('Access Denied!');
 
-    const rtMatches = await compare(user.refreshToken, rt);
-    if (!rtMatches) throw new ForbiddenException('Access Denied!');
+    const rtMatches = await argon.verify(user.refreshToken, rt);
+    if (!rtMatches) throw new ForbiddenException('Access Denied!!!');
     const payload: JwtPayload = {
       userId: user.id,
       msisdn: user.msisdn,

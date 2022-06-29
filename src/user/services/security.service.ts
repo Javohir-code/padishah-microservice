@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import fetch from 'cross-fetch';
-import { hash } from 'bcryptjs';
+import * as argon from 'argon2';
 import { JwtPayload, Tokens } from '../types';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from './prisma.service';
@@ -66,7 +66,7 @@ export class SecurityService {
   }
 
   async updateRtHash(userId: number, rt: string): Promise<void> {
-    const hashed = await hash(rt, 10);
+    const hashed = await argon.hash(rt);
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: hashed },

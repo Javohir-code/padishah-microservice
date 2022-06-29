@@ -36,7 +36,7 @@ export class UserController {
     return await this.userService.addUserDetails(user, userDetailsDto);
   }
 
-  @Post('local/login')
+  @Post('login')
   @HttpCode(HttpStatus.OK)
   async loginUser(@Body() loginInfo: LoginInfo) {
     return await this.userService.loginUser(loginInfo);
@@ -44,8 +44,11 @@ export class UserController {
 
   @Post('verify')
   @HttpCode(HttpStatus.OK)
-  async verifyTheNumber(@Body('msisdn') msisdn: string): Promise<Tokens> {
-    return await this.userService.verifyTheNumber(msisdn);
+  async verifyTheNumber(
+    @Body('msisdn') msisdn: string,
+    @Body('code') code: string,
+  ): Promise<Tokens> {
+    return await this.userService.verifyTheNumber(msisdn, code);
   }
 
   @Put('add-password')
@@ -63,15 +66,17 @@ export class UserController {
     await this.userService.getForgetPasswordOtp(msisdn);
   }
 
-  @Put('password/change')
+  @Put('change-password')
   async changePassword(
     @Body('msisdn') msisdn: string,
+    @Body('code') code: string,
     @Body() passwordDto: PasswordDto,
   ): Promise<void> {
-    await this.userService.changePassword(msisdn, passwordDto);
+    await this.userService.changePassword(msisdn, code, passwordDto);
   }
 
   @Post('logout')
+  @UseGuards(AtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async logoutUser(@CurrentUser() user: IRequestUser): Promise<boolean> {
     return await this.userService.logout(user.userId);

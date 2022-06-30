@@ -11,7 +11,6 @@ import { UserDetailsDto } from '../dto/user.details.dto';
 import { IRequestUser } from '../interfaces/request-user.interface';
 import { User } from '@prisma/client';
 import { addSeconds } from 'date-fns';
-import * as moment from 'moment';
 import * as argon from 'argon2';
 import { LoginInfo } from '../dto/login-info.dto';
 import { PasswordDto } from '../dto/password.details.dto';
@@ -37,7 +36,6 @@ export class UserService {
   }> {
     const foundUser = await this.findUserByMsisdn(IUser.msisdn);
     if (foundUser) {
-      const updatedAt = moment().format('YYYY-MM-DDTHH:mm:ss.SSS');
       const user = await this.prisma.user.update({
         where: { msisdn: foundUser.msisdn },
         data: {
@@ -46,9 +44,10 @@ export class UserService {
           middleName: userDetailsDto?.middleName,
           email: userDetailsDto?.email,
           status: userDetailsDto?.status,
-          updatedAt: updatedAt,
         },
       });
+      delete user.password;
+      delete user.refreshToken;
       const payload: JwtPayload = { userId: user.id, msisdn: user.msisdn };
       const tokens = await this.securityService.getTokens(payload);
       await this.securityService.updateRtHash(user.id, tokens.refresh_token);
@@ -71,7 +70,7 @@ export class UserService {
       new Date(),
       this.configService.get('accessExpiresIn'),
     );
-    console.log(this.configService.get('accessExpiresIn'));
+
     await this.prisma.verifyCodes.upsert({
       where: {
         msisdn: loginDto.msisdn,

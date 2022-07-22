@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { GrpcMethod } from '@nestjs/microservices';
 import { CurrentUser } from 'src/global/decorators/current-user.decorator';
 import { CurrentUserRt } from 'src/global/decorators/current-user-rt.decorator';
 import { LoginInfo } from '../dto/login-info.dto';
@@ -23,7 +24,8 @@ import { Tokens } from '../types';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Put('add-details')
+  // @Put('add-details')
+  // @GrpcMethod('UserController', 'AddUser');
   @UseGuards(AtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async addUser(

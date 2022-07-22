@@ -38,13 +38,15 @@ export class UserController {
     return await this.userService.addUserDetails(user, userDetailsDto);
   }
 
-  @Post('login')
+  // @Post('login')
+  @GrpcMethod('UserController', 'Login')
   @HttpCode(HttpStatus.OK)
   async loginUser(@Body() loginInfo: LoginInfo) {
     return await this.userService.loginUser(loginInfo);
   }
 
-  @Post('verify')
+  // @Post('verify')
+  @GrpcMethod('UserController', 'VerifyTheNumber')
   @HttpCode(HttpStatus.OK)
   async verifyTheNumber(
     @Body('msisdn') msisdn: string,
@@ -63,12 +65,14 @@ export class UserController {
     await this.userService.addPassword(user, passwordDto);
   }
 
-  @Post('forget-password')
+  // @Post('forget-password')
+  @GrpcMethod('UserController', 'ForgetPassword')
   async getForgetPasswordOtp(@Body('msisdn') msisdn: string) {
     await this.userService.getForgetPasswordOtp(msisdn);
   }
 
-  @Put('change-password')
+  // @Put('change-password')
+  @GrpcMethod('UserController', 'ChangePassword')
   async changePassword(
     @Body('msisdn') msisdn: string,
     @Body('code') code: string,

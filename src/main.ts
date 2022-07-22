@@ -14,10 +14,11 @@ const microserviceOptions = {
 };
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice(
-    AppModule,
-    microserviceOptions,
-  );
+  // const app = await NestFactory.createMicroservice(
+  //   AppModule,
+  //   microserviceOptions,
+  // );
+  const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   const prismaService = app.get(PrismaService);
 
@@ -30,7 +31,7 @@ async function bootstrap() {
   // };
 
   // app.enableCors(options);
-  app.listen();
+  app.listen(3000);
   // await prismaService.enableShutdownHooks();
 }
 bootstrap();

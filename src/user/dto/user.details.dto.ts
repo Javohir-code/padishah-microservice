@@ -24,6 +24,7 @@ export class UserDetailsDto {
   lastName: string;
 
   @IsString()
+  @IsOptional()
   @MinLength(2)
   @MaxLength(50)
   middleName: string;

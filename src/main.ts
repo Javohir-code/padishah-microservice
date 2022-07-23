@@ -1,24 +1,23 @@
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { PrismaService } from './user/services/prisma.service';
 import { join } from 'path';
 
 const microserviceOptions = {
   transport: Transport.GRPC,
   options: {
-    package: 'app',
-    protoPath: join(__dirname, '../src/app.proto'),
+    package: 'user',
+    protoPath: join(__dirname, '../src/user.proto'),
   },
 };
 
 async function bootstrap() {
-  // const app = await NestFactory.createMicroservice(
-  //   AppModule,
-  //   microserviceOptions,
-  // );
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.createMicroservice(
+    AppModule,
+    microserviceOptions,
+  );
   app.useGlobalPipes(new ValidationPipe());
   const prismaService = app.get(PrismaService);
 
@@ -31,7 +30,7 @@ async function bootstrap() {
   // };
 
   // app.enableCors(options);
-  app.listen(3000);
-  // await prismaService.enableShutdownHooks();
+  app.listen();
+  // await prismaService.enableShutdownHooks(app);
 }
 bootstrap();

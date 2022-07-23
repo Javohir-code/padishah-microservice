@@ -3,8 +3,6 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
-  Post,
-  Put,
   UseGuards,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
@@ -24,8 +22,7 @@ import { Tokens } from '../types';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // @Put('add-details')
-  // @GrpcMethod('UserController', 'AddUser');
+  @GrpcMethod('UserController', 'AddUser')
   @UseGuards(AtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async addUser(
@@ -55,7 +52,8 @@ export class UserController {
     return await this.userService.verifyTheNumber(msisdn, code);
   }
 
-  @Put('add-password')
+  // @Put('add-password')
+  @GrpcMethod('UserController', 'AddPassword')
   @UseGuards(AtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async addPassword(
@@ -81,14 +79,16 @@ export class UserController {
     await this.userService.changePassword(msisdn, code, passwordDto);
   }
 
-  @Post('logout')
+  // @Post('logout')
+  @GrpcMethod('UserController', 'LogoutUser')
   @UseGuards(AtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async logoutUser(@CurrentUser() user: IRequestUser): Promise<boolean> {
     return await this.userService.logout(user.userId);
   }
 
-  @Post('refresh')
+  // @Post('refresh')
+  @GrpcMethod('UserController', 'RefreshTokens')
   @UseGuards(RtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async refreshTokens(

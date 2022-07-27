@@ -12,6 +12,8 @@ import { IRequestUser } from '../interfaces/request-user.interface';
 import { User } from '@prisma/client';
 import { addSeconds } from 'date-fns';
 import * as argon from 'argon2';
+import { RpcException } from '@nestjs/microservices';
+import * as grpc from '@grpc/grpc-js';
 import { LoginInfo } from '../dto/login-info.dto';
 import { PasswordDto } from '../dto/password.details.dto';
 import { OtpReason } from '../enums/otp-reason.enum';
@@ -61,7 +63,7 @@ export class UserService {
     }
   }
 
-  async loginUser(loginInfo: LoginInfo) {
+  async login(loginInfo: LoginInfo) {
     const { res, code } = await this.securityService.sendMessage(
       loginInfo.msisdn,
     );
@@ -71,33 +73,47 @@ export class UserService {
       this.configService.get('accessExpiresIn'),
     );
 
-    await this.prisma.verifyCodes.upsert({
-      where: {
-        msisdn: loginDto.msisdn,
-      },
-      update: {
-        code: loginDto.code,
-        expiredAt: expiresIn,
-        updatedAt: new Date(),
-        reason: loginInfo.reason ? loginInfo.reason : 'LOGIN',
-      },
-      create: {
-        msisdn: loginDto.msisdn,
-        code: loginDto.code,
-        expiredAt: expiresIn,
-        ip: loginInfo.ipAddress,
-      },
-    });
+    await this.prisma.verifyCodes
+      .upsert({
+        where: {
+          msisdn: loginDto.msisdn,
+        },
+        update: {
+          code: loginDto.code,
+          expiredAt: expiresIn,
+          updatedAt: new Date(),
+          reason: loginInfo.reason ? loginInfo.reason : 'LOGIN',
+        },
+        create: {
+          msisdn: loginDto.msisdn,
+          code: loginDto.code,
+          expiredAt: expiresIn,
+          ip: loginInfo.ipAddress,
+        },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
     const foundUser = await this.findUserMsisdnWise(loginInfo.msisdn);
     if (foundUser == true) {
-      await this.prisma.user.create({
-        data: {
-          msisdn: loginInfo.msisdn,
-        },
-      });
+      await this.prisma.user
+        .create({
+          data: {
+            msisdn: loginInfo.msisdn,
+          },
+        })
+        .catch((error) => {
+          throw new RpcException({
+            code: grpc.status.NOT_FOUND,
+            message: error.message,
+          });
+        });
     }
 
-    return res;
+    return { res };
   }
 
   async verifyTheNumber(msisdn: string, code: string): Promise<Tokens> {

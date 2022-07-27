@@ -35,11 +35,9 @@ export class UserController {
     return await this.userService.addUserDetails(user, userDetailsDto);
   }
 
-  // @Post('login')
   @GrpcMethod('UserController', 'Login')
-  @HttpCode(HttpStatus.OK)
-  async loginUser(@Body() loginInfo: LoginInfo) {
-    return await this.userService.loginUser(loginInfo);
+  async login(loginInfo: LoginInfo) {
+    return this.userService.login(loginInfo);
   }
 
   // @Post('verify')

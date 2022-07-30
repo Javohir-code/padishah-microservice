@@ -6,6 +6,8 @@ import * as argon from 'argon2';
 import { JwtPayload, Tokens } from '../types';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from './prisma.service';
+import * as grpc from '@grpc/grpc-js';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class SecurityService {
@@ -67,9 +69,16 @@ export class SecurityService {
 
   async updateRtHash(userId: number, rt: string): Promise<void> {
     const hashed = await argon.hash(rt);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: hashed },
-    });
+    await this.prisma.user
+      .update({
+        where: { id: userId },
+        data: { refreshToken: hashed },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
   }
 }

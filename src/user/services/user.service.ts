@@ -112,18 +112,30 @@ export class UserService {
           });
         });
     }
-
-    return { res };
   }
 
-  async verifyTheNumber(msisdn: string, code: string): Promise<Tokens> {
-    const loginInfo = await this.prisma.verifyCodes.findFirst({
-      where: { msisdn: msisdn, expiredAt: { gt: new Date() }, code: code },
-    });
+  async verifyTheNumber(msisdn: string, code: string): Promise<any> {
+    const loginInfo = await this.prisma.verifyCodes
+      .findFirst({
+        where: { msisdn: msisdn, expiredAt: { gt: new Date() }, code: code },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.INVALID_ARGUMENT,
+          message: error.message,
+        });
+      });
     if (!loginInfo) throw new BadRequestException('Invalid or Expired Code!');
-    const user = await this.prisma.user.findUnique({
-      where: { msisdn: loginInfo.msisdn },
-    });
+    const user = await this.prisma.user
+      .findUnique({
+        where: { msisdn: loginInfo.msisdn },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
     if (!user) throw new NotFoundException('user credentials not found');
     const payload: JwtPayload = { userId: user.id, msisdn: user.msisdn };
     const tokens = await this.securityService.getTokens(payload);
@@ -132,10 +144,11 @@ export class UserService {
       data: { attempts: ++loginInfo.attempts },
       where: { id: loginInfo.id },
     });
-    // if (result) {
-    //   throw new NotFoundException(`msisdn with "${loginInfo.id}" not found!`);
-    // }
-    return tokens;
+    const token = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+    };
+    return { tokens: token };
   }
 
   async addPassword(
@@ -143,12 +156,19 @@ export class UserService {
     passwordDto: PasswordDto,
   ): Promise<void> {
     if (passwordDto.password === passwordDto.repassword) {
-      await this.prisma.user.update({
-        where: { msisdn: IUser.msisdn },
-        data: {
-          password: await argon.hash(passwordDto.password),
-        },
-      });
+      await this.prisma.user
+        .update({
+          where: { msisdn: IUser.msisdn },
+          data: {
+            password: await argon.hash(passwordDto.password),
+          },
+        })
+        .catch((error) => {
+          throw new RpcException({
+            code: grpc.status.NOT_FOUND,
+            message: error.message,
+          });
+        });
       return;
     }
 
@@ -173,7 +193,6 @@ export class UserService {
           expiredAt: expiresIn,
         },
       });
-      return res;
     }
   }
 
@@ -226,28 +245,32 @@ export class UserService {
     }
   }
 
-  async logout(userId: number): Promise<boolean> {
-    await this.prisma.user.updateMany({
-      where: {
-        id: userId,
-        refreshToken: {
-          not: null,
+  async logout(userId: number): Promise<any> {
+    await this.prisma.user
+      .updateMany({
+        where: {
+          id: userId,
+          refreshToken: {
+            not: null,
+          },
         },
-      },
-      data: {
-        refreshToken: null,
-      },
-    });
-    return true;
+        data: {
+          refreshToken: null,
+        },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
+    return { logout: 'success' };
   }
 
-  async refreshTokens(userId: number, rt: string): Promise<Tokens> {
+  async refreshTokens(userId: number, rt: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-
-    console.log(user);
-
     if (!user || !user.refreshToken)
       throw new ForbiddenException('Access Denied!');
 
@@ -259,27 +282,53 @@ export class UserService {
     };
     const tokens = await this.securityService.getTokens(payload);
     await this.securityService.updateRtHash(user.id, tokens.refresh_token);
-    return tokens;
+    const token = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+    };
+    return { tokens: token };
   }
 
-  // async addUserAddress(IUser: IRequestUser, addressDetails: AddressDto) {
-  //   const user = await this.findUserByMsisdn(IUser.msisdn);
-  //   const newAddress = await this.prisma.userAddresses.create({
-  //     data: {
-  //       userId: user.id,
-  //       regionId: 1,
-  //       districtId: 1,
-  //       latitude: addressDetails?.latitude,
-  //       longitude: addressDetails?.longitude,
-  //       name: addressDetails?.name,
-  //       street: addressDetails?.street,
-  //       city: addressDetails?.city,
-  //       home: addressDetails?.home,
-  //       apartment: addressDetails?.apartment,
-  //       comment: addressDetails?.comment,
-  //       domofon: addressDetails?.domofon,
-  //       address: addressDetails?.address,
-  //     },
-  //   });
-  // }
+  async getUserById(userId: number): Promise<any> {
+    const user = await this.prisma.user
+      .findUnique({
+        where: { id: userId },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
+
+    if (!user) {
+      throw new RpcException({
+        code: grpc.status.NOT_FOUND,
+        message: 'user not found',
+      });
+    }
+
+    return { user };
+  }
+
+  async getUserByMsisdn(msisdn: string): Promise<any> {
+    const user = await this.prisma.user
+      .findUnique({
+        where: { msisdn: msisdn },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
+    if (!user) {
+      throw new RpcException({
+        code: grpc.status.NOT_FOUND,
+        message: 'user not found',
+      });
+    }
+
+    return { user };
+  }
 }

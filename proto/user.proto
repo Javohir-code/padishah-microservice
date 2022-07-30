@@ -1,25 +1,22 @@
 syntax = "proto3";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/any.proto";
 
 package user;
 
 service UserController {
     rpc AddUser (AddUserRequest) returns (AddUserResponse){}
-    rpc Login (LoginRequest) returns (LoginResponse){}
-    rpc VerifyTheNumber (VerfiyCodeRequest) returns (VerifyCodeResponse){}
-    rpc AddPassword (AddPasswordRequest) returns (AddPasswordResponse){}
+    rpc Login (LoginRequest) returns (google.protobuf.Empty){}
+    rpc VerifyTheNumber (VerfiyCodeRequest) returns (VerifyCodeResponse) {}
+    rpc AddPassword (AddPasswordRequest) returns (google.protobuf.Empty){}
     rpc ForgetPassword (ForgetPassRequest) returns (ForgetPassResponse){}
     rpc ChangePassword (ChangePass) returns (ChangePassResponse){}
-    rpc LogoutUser (LogoutRequest) returns (LoginResponse){}
+    rpc LogoutUser (LogoutRequest) returns (LogoutResponse){}
     rpc RefreshTokens (RefreshTokensRequest) returns (RefreshTokensResponse){}
-}
-
-message LoginResponse {
-    LoginResQuery login = 1;
-}
-
-message LoginRequest {
-    Login login = 1;
+    rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdResponse){}
+    rpc GetUserByMsisdn (GetUserByMsisdnRequest) returns (GetUserByMsisdnResponse){}
 }
 
 message CurrentUser {
@@ -38,6 +35,12 @@ message UserDetailsDto {
     optional string status = 7;
     optional string language = 8;
 }
+
+message Tokens {
+    string accessToken = 1;
+    string refreshToken = 2;
+}
+
 message UserReturn {
     int32 id = 1;
     string firstName = 2;
@@ -52,9 +55,20 @@ message UserReturn {
     optional google.protobuf.Timestamp updatedAt = 11;
     optional google.protobuf.Timestamp deletedAt = 12;
 }
-message Tokens {
-    string accessToken = 1;
-    string refreshToken = 2;
+
+message LoginRequest {
+    string msisdn = 1;
+    optional string ipAddress = 2;
+    optional string reason = 3;
+}
+
+message VerfiyCodeRequest {
+    string msisdn = 1;
+    string code = 2;
+}
+
+message VerifyCodeResponse {
+    Tokens tokens = 1;
 }
 
 message AddUserRequest {
@@ -64,25 +78,6 @@ message AddUserRequest {
 message AddUserResponse {
    UserReturn user = 1;
    Tokens tokens = 2;
-}
-
-message Login {
-    string msisdn = 1;  
-    optional string ipAddress = 2;
-    optional string reason = 3;
-}
-
-message LoginResQuery {
-    optional int32 size = 1;
-    optional int32 timeout = 2;
-}
-
-message VerfiyCodeRequest {
-    string msisdn = 1;
-    string code = 2;
-}
-message VerifyCodeResponse {
-    Tokens tokens = 1;
 }
 
 message ForgetPassRequest {
@@ -99,17 +94,9 @@ message PasswordDto {
 message ChangePass {
     string msisdn = 1;
     string code = 2;
-    PasswordDto passoword = 3;
+    PasswordDto password = 3;
 }
 message ChangePassResponse {
-
-}
-
-message AddPasswordRequest {
-    CurrentUser user = 1;
-    PasswordDto password = 2;
-}
-message AddPasswordResponse {
 
 }
 
@@ -117,13 +104,34 @@ message LogoutRequest {
     CurrentUser user = 1;
 }
 message LogoutResponse {
-    bool logout = 1;
+    string logout = 1;
+}
+
+message AddPasswordRequest {
+    CurrentUser user = 1;
+    PasswordDto password = 2;
 }
 
 message RefreshTokensRequest {
     CurrentUser user = 1;
-    string refreshtoken = 2;
+    string refreshToken = 2;
 }
 message RefreshTokensResponse {
     Tokens tokens = 1;
+}
+
+message GetUserByIdRequest {
+    int32 userId = 1;
+}
+
+message GetUserByIdResponse {
+    UserReturn user = 1;
+}
+
+message GetUserByMsisdnRequest {
+    string msisdn = 1;
+}
+
+message GetUserByMsisdnResponse {
+    UserReturn user = 1;
 }

@@ -13,7 +13,7 @@ async function bootstrap() {
     {
       transport: Transport.GRPC,
       options: {
-        url: 'localhost:50051',
+        url: `${process.env.HOST}:${process.env.PORT}`,
         package: 'user',
         protoPath: join(reqPath, 'proto/user.proto'),
       },
@@ -24,5 +24,6 @@ async function bootstrap() {
 
   await app.listen();
   await prismaService.enableShutdownHooks(app);
+  console.log(`Running on ${process.env.HOST}:${process.env.PORT}`)
 }
 bootstrap();

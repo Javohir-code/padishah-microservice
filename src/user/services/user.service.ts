@@ -18,7 +18,8 @@ import { LoginInfo } from '../dto/login-info.dto';
 import { PasswordDto } from '../dto/password.details.dto';
 import { OtpReason } from '../enums/otp-reason.enum';
 import { SecurityService } from './security.service';
-import { JwtPayload, Tokens } from '../types';
+import { JwtPayload } from '../types';
+import { RoleDto } from '../dto/role-assign.details.dto';
 
 @Injectable()
 export class UserService {
@@ -47,10 +48,23 @@ export class UserService {
           email: userDetailsDto?.email,
           status: userDetailsDto?.status,
         },
+        include: {
+          role: {
+            select: {
+              role: {
+                select: { name: true },
+              },
+            },
+          },
+        },
       });
       delete user.password;
       delete user.refreshToken;
-      const payload: JwtPayload = { userId: user.id, msisdn: user.msisdn };
+      const payload: JwtPayload = {
+        userId: user.id,
+        msisdn: user.msisdn,
+        role: user.role[0].role?.name,
+      };
       const tokens = await this.securityService.getTokens(payload);
       await this.securityService.updateRtHash(user.id, tokens.refresh_token);
       return {
@@ -99,10 +113,33 @@ export class UserService {
       });
     const foundUser = await this.findUserMsisdnWise(loginInfo.msisdn);
     if (foundUser == true) {
-      await this.prisma.user
+      const role = await this.prisma.roles
+        .findFirst({
+          where: { name: 'CLIENT' },
+        })
+        .catch((error) => {
+          throw new RpcException({
+            code: grpc.status.NOT_FOUND,
+            message: error.message,
+          });
+        });
+      const newUser = await this.prisma.user
         .create({
           data: {
             msisdn: loginInfo.msisdn,
+          },
+        })
+        .catch((error) => {
+          throw new RpcException({
+            code: grpc.status.NOT_FOUND,
+            message: error.message,
+          });
+        });
+      await this.prisma.roleUsers
+        .create({
+          data: {
+            userId: newUser.id,
+            roleId: role.id,
           },
         })
         .catch((error) => {
@@ -129,6 +166,17 @@ export class UserService {
     const user = await this.prisma.user
       .findUnique({
         where: { msisdn: loginInfo.msisdn },
+        include: {
+          role: {
+            select: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       })
       .catch((error) => {
         throw new RpcException({
@@ -137,7 +185,11 @@ export class UserService {
         });
       });
     if (!user) throw new NotFoundException('user credentials not found');
-    const payload: JwtPayload = { userId: user.id, msisdn: user.msisdn };
+    const payload: JwtPayload = {
+      userId: user.id,
+      msisdn: user.msisdn,
+      role: user.role[0].role?.name,
+    };
     const tokens = await this.securityService.getTokens(payload);
     await this.securityService.updateRtHash(user.id, tokens.refresh_token);
     await this.prisma.verifyCodes.update({
@@ -270,6 +322,17 @@ export class UserService {
   async refreshTokens(userId: number, rt: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        role: {
+          select: {
+            role: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!user || !user.refreshToken)
       throw new ForbiddenException('Access Denied!');
@@ -279,6 +342,7 @@ export class UserService {
     const payload: JwtPayload = {
       userId: user.id,
       msisdn: user.msisdn,
+      role: user.role[0].role?.name,
     };
     const tokens = await this.securityService.getTokens(payload);
     await this.securityService.updateRtHash(user.id, tokens.refresh_token);
@@ -293,6 +357,17 @@ export class UserService {
     const user = await this.prisma.user
       .findUnique({
         where: { id: userId },
+        include: {
+          role: {
+            select: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       })
       .catch((error) => {
         throw new RpcException({
@@ -308,13 +383,24 @@ export class UserService {
       });
     }
 
-    return { user };
+    return { user: { ...user, role: user.role[0].role.name } };
   }
 
   async getUserByMsisdn(msisdn: string): Promise<any> {
     const user = await this.prisma.user
       .findUnique({
         where: { msisdn: msisdn },
+        include: {
+          role: {
+            select: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       })
       .catch((error) => {
         throw new RpcException({
@@ -329,6 +415,21 @@ export class UserService {
       });
     }
 
-    return { user };
+    return { user: { ...user, role: user.role[0].role.name } };
+  }
+
+  async assignRole(data: RoleDto): Promise<any> {
+    const role = await this.prisma.roles.findFirst({
+      where: { id: data.roleId },
+    });
+    await this.prisma.roleUsers.update({
+      where: { id: data.userId },
+      data: { roleId: role.id },
+    });
+  }
+
+  async getRoles(): Promise<any> {
+    const roles = await this.prisma.roles.findMany();
+    return { roles };
   }
 }

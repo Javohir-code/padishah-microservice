@@ -66,4 +66,14 @@ export class UserController {
   async getUserByMsisdn(data: any): Promise<any> {
     return await this.userService.getUserByMsisdn(data.msisdn);
   }
+
+  @GrpcMethod('UserController', 'AssignRole')
+  async assignRole(data: any): Promise<any> {
+    return await this.userService.assignRole(data);
+  }
+
+  @GrpcMethod('UserController', 'GetRoles')
+  async getRoles(): Promise<any> {
+    return await this.userService.getRoles();
+  }
 }

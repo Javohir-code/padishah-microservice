@@ -42,6 +42,7 @@ export class UserDetailsDto {
   msisdn: string;
 
   @IsString()
+  @IsIn([UserStatus.ACTIVE, UserStatus.BLOCK, UserStatus.INAVTIVE])
   @IsOptional()
   status: UserStatus;
 

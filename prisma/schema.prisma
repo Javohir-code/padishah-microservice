@@ -111,7 +111,7 @@ enum OtpStatus {
 }
 
 enum RolesEnum {
-   CUSTOMER
+   CLIENT
    MERCHANT
    ADMIN
 }

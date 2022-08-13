@@ -33,6 +33,7 @@ export class MerchantRegister {
   msisdn: string;
 
   @IsString()
+  @IsIn([UserStatus.ACTIVE, UserStatus.BLOCK, UserStatus.INACTIVE])
   @IsOptional()
   status: UserStatus;
 

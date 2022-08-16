@@ -418,12 +418,14 @@ export class UserService {
     return { user: { ...user, role: user.role[0].role.name } };
   }
 
-  async assignRole(data: RoleDto): Promise<any> {
+  async assignRole(data: any): Promise<any> {
     const role = await this.prisma.roles.findFirst({
       where: { id: data.roleId },
     });
     await this.prisma.roleUsers.update({
-      where: { id: data.userId },
+      where: {
+        userId: data.userId,
+      },
       data: { roleId: role.id },
     });
   }
@@ -431,5 +433,14 @@ export class UserService {
   async getRoles(): Promise<any> {
     const roles = await this.prisma.roles.findMany();
     return { roles };
+  }
+
+  async updateUserStatus(data: any): Promise<any> {
+    const updated = await this.prisma.user.update({
+      where: { id: data.userId },
+      data: { status: data.status },
+    });
+    const user = { userId: updated.id, status: updated.status };
+    return { user };
   }
 }

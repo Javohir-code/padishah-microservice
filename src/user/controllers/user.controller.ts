@@ -69,11 +69,18 @@ export class UserController {
 
   @GrpcMethod('UserController', 'AssignRole')
   async assignRole(data: any): Promise<any> {
-    return await this.userService.assignRole(data);
+    // console.log(data.role);
+    return await this.userService.assignRole(data.role);
   }
 
   @GrpcMethod('UserController', 'GetRoles')
   async getRoles(): Promise<any> {
     return await this.userService.getRoles();
+  }
+
+  @GrpcMethod('UserController', 'UpdateStatus')
+  async updateStatus(data: any): Promise<any> {
+    console.log(data.user);
+    return await this.userService.updateUserStatus(data.user);
   }
 }

@@ -19,6 +19,7 @@ service UserController {
     rpc AssignRole (AssignRoleRequest) returns (google.protobuf.Empty){}
     rpc GetRoles (GetRolesRequest) returns (GetRolesResponse){}
     rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse){}
+    rpc LoginWithPassword(LoginWithPassRequest) returns (LoginWithPassResponse){}
 }
 
 message CurrentUser {
@@ -171,4 +172,13 @@ message UpdateStatusRequest {
 
 message UpdateStatusResponse {
     UpdateStatus user = 1;
+}
+
+message LoginWithPassRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message LoginWithPassResponse {
+   Tokens tokens = 1;
 }

@@ -20,6 +20,7 @@ import { OtpReason } from '../enums/otp-reason.enum';
 import { SecurityService } from './security.service';
 import { JwtPayload } from '../types';
 import { RoleDto } from '../dto/role-assign.details.dto';
+import { LoginWithPassword } from '../dto/login.withPassword.dto';
 
 @Injectable()
 export class UserService {
@@ -442,5 +443,69 @@ export class UserService {
     });
     const user = { userId: updated.id, status: updated.status };
     return { user };
+  }
+
+  async loginWithPassword(data: any): Promise<any> {
+    if (data.login.indexOf('@') !== -1) {
+      const user = await this.prisma.user.findFirst({
+        where: { email: data.login },
+        include: {
+          role: {
+            include: {
+              role: {
+                select: { name: true },
+              },
+            },
+          },
+        },
+      });
+      if (user.role[0].role.name === 'CLIENT')
+        throw new ForbiddenException('Access Denied');
+
+      const passMatches = await argon.verify(user.password, data.password);
+      if (!passMatches) throw new BadRequestException('Invalid Credentials');
+
+      const payload: JwtPayload = {
+        userId: user.id,
+        msisdn: user.msisdn,
+        role: user.role[0].role?.name,
+      };
+      const tokens = await this.securityService.getTokens(payload);
+      const token = {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+      };
+      return { tokens: token };
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: { msisdn: data.login },
+      include: {
+        role: {
+          include: {
+            role: {
+              select: { name: true },
+            },
+          },
+        },
+      },
+    });
+    if (user.role[0].role.name === 'CLIENT')
+      throw new ForbiddenException('Access Denied');
+
+    const passMatches = await argon.verify(user.password, data.password);
+    if (!passMatches) throw new BadRequestException('Invalid Credentials');
+
+    const payload: JwtPayload = {
+      userId: user.id,
+      msisdn: user.msisdn,
+      role: user.role[0].role?.name,
+    };
+    const tokens = await this.securityService.getTokens(payload);
+    const token = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+    };
+    return { tokens: token };
   }
 }

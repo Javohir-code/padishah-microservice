@@ -86,4 +86,9 @@ export class UserController {
   async loginWithPassword(data: any): Promise<any> {
     return await this.userService.loginWithPassword(data);
   }
+
+  @GrpcMethod('UserController', 'Register')
+  async register(data: any): Promise<any> {
+    return await this.userService.register(data.user);
+  }
 }

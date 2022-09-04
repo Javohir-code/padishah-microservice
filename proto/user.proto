@@ -20,6 +20,7 @@ service UserController {
     rpc GetRoles (GetRolesRequest) returns (GetRolesResponse){}
     rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse){}
     rpc LoginWithPassword(LoginWithPassRequest) returns (LoginWithPassResponse){}
+    rpc Register(RegisterRequest) returns (RegisterResponse){}
 }
 
 message CurrentUser {
@@ -74,6 +75,17 @@ message Roles {
 message UpdateStatus {
     int32 userId = 1;
     string status = 2;
+}
+
+message Register {
+    string firstName = 1;
+    string lastName = 2;
+    string middleName = 3;
+    string email = 4;
+    string password = 5;
+    string msisdn = 6;
+    optional string status = 7;
+    optional string language = 8;
 }
 
 message LoginRequest {
@@ -181,4 +193,12 @@ message LoginWithPassRequest {
 
 message LoginWithPassResponse {
    Tokens tokens = 1;
+}
+
+message RegisterRequest {
+    Register user = 1;
+}
+
+message RegisterResponse {
+    UserDetailsDto user = 1;
 }

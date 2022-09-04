@@ -7,7 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class MerchantRegister {
+export class UserRegister {
   @IsString()
   @IsNotEmpty()
   firstName: string;

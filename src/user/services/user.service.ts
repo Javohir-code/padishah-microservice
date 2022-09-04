@@ -21,6 +21,7 @@ import { SecurityService } from './security.service';
 import { JwtPayload } from '../types';
 import { RoleDto } from '../dto/role-assign.details.dto';
 import { LoginWithPassword } from '../dto/login.withPassword.dto';
+import { UserRegister } from '../dto/user.register.dto';
 
 @Injectable()
 export class UserService {
@@ -507,5 +508,19 @@ export class UserService {
       refreshToken: tokens.refresh_token,
     };
     return { tokens: token };
+  }
+
+  async register(data: any): Promise<any> {
+    const newUser = await this.prisma.user.create({
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        middleName: data.middleName,
+        email: data.email,
+        password: await argon.hash(data.password),
+        msisdn: data.msisdn,
+      },
+    });
+    return { user: newUser };
   }
 }

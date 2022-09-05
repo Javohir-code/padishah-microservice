@@ -21,9 +21,7 @@ async function bootstrap() {
   );
   app.useGlobalPipes(new ValidationPipe());
   const prismaService = app.get(PrismaService);
-
   await app.listen();
   await prismaService.enableShutdownHooks(app);
-  console.log(`Running on ${process.env.HOST}:${process.env.PORT}`)
 }
 bootstrap();

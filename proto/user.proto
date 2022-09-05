@@ -1,7 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/struct.proto";
 import "google/protobuf/any.proto";
 
 package user;
@@ -17,13 +16,19 @@ service UserController {
     rpc RefreshTokens (RefreshTokensRequest) returns (RefreshTokensResponse){}
     rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdResponse){}
     rpc GetUserByMsisdn (GetUserByMsisdnRequest) returns (GetUserByMsisdnResponse){}
+    rpc AssignRole (AssignRoleRequest) returns (google.protobuf.Empty){}
+    rpc GetRoles (GetRolesRequest) returns (GetRolesResponse){}
+    rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse){}
+    rpc LoginWithPassword(LoginWithPassRequest) returns (LoginWithPassResponse){}
+    rpc Register(RegisterRequest) returns (RegisterResponse){}
 }
 
 message CurrentUser {
     int32 userId = 1;
     string msisdn = 2;
-    int64 iat = 3;
-    int64 exp = 4;
+    string role = 3;
+    int64 iat = 4;
+    int64 exp = 5;
 }
 message UserDetailsDto {
     string firstName = 1;
@@ -50,10 +55,37 @@ message UserReturn {
     optional string msisdn = 6;
     optional string status = 7;
     optional string language = 8;
-    optional google.protobuf.Timestamp lastLogin = 9;
-    optional google.protobuf.Timestamp createdAt = 10;
-    optional google.protobuf.Timestamp updatedAt = 11;
-    optional google.protobuf.Timestamp deletedAt = 12;
+    optional string role = 9;
+    optional google.protobuf.Timestamp lastLogin = 10;
+    optional google.protobuf.Timestamp createdAt = 11;
+    optional google.protobuf.Timestamp updatedAt = 12;
+    optional google.protobuf.Timestamp deletedAt = 13;
+}
+
+message AssignRole {
+    int32 userId = 1;
+    int32 roleId = 2;
+}
+
+message Roles {
+    int32 id = 1;
+    string name = 2;
+}
+
+message UpdateStatus {
+    int32 userId = 1;
+    string status = 2;
+}
+
+message Register {
+    string firstName = 1;
+    string lastName = 2;
+    string middleName = 3;
+    string email = 4;
+    string password = 5;
+    string msisdn = 6;
+    optional string status = 7;
+    optional string language = 8;
 }
 
 message LoginRequest {
@@ -134,4 +166,40 @@ message GetUserByMsisdnRequest {
 
 message GetUserByMsisdnResponse {
     UserReturn user = 1;
+}
+
+message AssignRoleRequest {
+  AssignRole role = 1;
+}
+
+message GetRolesRequest {}
+
+message GetRolesResponse {
+  repeated Roles roles = 1;
+}
+
+message UpdateStatusRequest {
+    UpdateStatus user = 1;
+}
+
+message UpdateStatusResponse {
+    UpdateStatus user = 1;
+}
+
+message LoginWithPassRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message LoginWithPassResponse {
+   Tokens tokens = 1;
+}
+
+message RegisterRequest {
+    Register user = 1;
+}
+
+message RegisterResponse {
+    UserDetailsDto user = 1;
+    Tokens tokens = 2;
 }

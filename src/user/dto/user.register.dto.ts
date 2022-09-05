@@ -7,7 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class MerchantRegister {
+export class UserRegister {
   @IsString()
   @IsNotEmpty()
   firstName: string;
@@ -33,6 +33,7 @@ export class MerchantRegister {
   msisdn: string;
 
   @IsString()
+  @IsIn([UserStatus.ACTIVE, UserStatus.BLOCK, UserStatus.INACTIVE])
   @IsOptional()
   status: UserStatus;
 

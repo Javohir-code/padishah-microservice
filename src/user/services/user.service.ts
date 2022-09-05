@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/user/services/prisma.service';
 import { UserDetailsDto } from '../dto/user.details.dto';
 import { IRequestUser } from '../interfaces/request-user.interface';
-import { User } from '@prisma/client';
+import { RolesEnum, User } from '@prisma/client';
 import { addSeconds } from 'date-fns';
 import * as argon from 'argon2';
 import { RpcException } from '@nestjs/microservices';
@@ -19,9 +19,6 @@ import { PasswordDto } from '../dto/password.details.dto';
 import { OtpReason } from '../enums/otp-reason.enum';
 import { SecurityService } from './security.service';
 import { JwtPayload } from '../types';
-import { RoleDto } from '../dto/role-assign.details.dto';
-import { LoginWithPassword } from '../dto/login.withPassword.dto';
-import { UserRegister } from '../dto/user.register.dto';
 
 @Injectable()
 export class UserService {
@@ -511,16 +508,149 @@ export class UserService {
   }
 
   async register(data: any): Promise<any> {
-    const newUser = await this.prisma.user.create({
-      data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        middleName: data.middleName,
-        email: data.email,
-        password: await argon.hash(data.password),
-        msisdn: data.msisdn,
-      },
-    });
-    return { user: newUser };
+    const newUser = await this.prisma.user
+      .create({
+        data: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          middleName: data.middleName,
+          email: data.email,
+          password: await argon.hash(data.password),
+          msisdn: data.msisdn,
+          status: data?.status,
+          language: data?.language,
+        },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.INVALID_ARGUMENT,
+          message: error.message,
+        });
+      });
+    delete newUser.password;
+    await this.assignDefaultRole(RolesEnum.CLIENT, newUser.id);
+    const role = await this.prisma.user
+      .findFirst({
+        where: { id: newUser.id },
+        include: {
+          role: {
+            include: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
+
+    const payload: JwtPayload = {
+      userId: newUser.id,
+      msisdn: newUser?.msisdn,
+      role: role.role[0].role?.name,
+    };
+    const tokens = await this.securityService.getTokens(payload);
+    await this.securityService.updateRtHash(newUser.id, tokens.refresh_token);
+    const token = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+    };
+
+    return { user: newUser, tokens: token };
+  }
+
+  async registerMerchant(data: any): Promise<any> {
+    const newMerchant = await this.prisma.user
+      .create({
+        data: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          middleName: data.middleName,
+          email: data.email,
+          password: await argon.hash(data.password),
+          msisdn: data.msisdn,
+          status: data?.status,
+          language: data?.language,
+        },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.INVALID_ARGUMENT,
+          message: error.message,
+        });
+      });
+    await this.assignDefaultRole(RolesEnum.MERCHANT, newMerchant.id);
+    const role = await this.prisma.user
+      .findFirst({
+        where: { id: newMerchant.id },
+        include: {
+          role: {
+            include: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
+
+    const payload: JwtPayload = {
+      userId: newMerchant.id,
+      msisdn: newMerchant?.msisdn,
+      role: role.role[0].role?.name,
+    };
+    const tokens = await this.securityService.getTokens(payload);
+    await this.securityService.updateRtHash(
+      newMerchant.id,
+      tokens.refresh_token,
+    );
+    const token = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+    };
+
+    return { user: newMerchant, tokens: token };
+  }
+
+  private async assignDefaultRole(
+    name: RolesEnum,
+    userId: number,
+  ): Promise<any> {
+    const role = await this.prisma.roles
+      .findFirst({
+        where: { name: name },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.NOT_FOUND,
+          message: error.message,
+        });
+      });
+
+    await this.prisma.roleUsers
+      .create({
+        data: { userId: userId, roleId: role.id },
+      })
+      .catch((error) => {
+        throw new RpcException({
+          code: grpc.status.INVALID_ARGUMENT,
+          message: error.message,
+        });
+      });
   }
 }

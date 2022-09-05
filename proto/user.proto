@@ -201,4 +201,5 @@ message RegisterRequest {
 
 message RegisterResponse {
     UserDetailsDto user = 1;
+    Tokens tokens = 2;
 }

@@ -4,9 +4,8 @@ import * as argon from 'argon2';
 const prisma = new PrismaClient();
 
 async function main() {
-  // await prisma.user.deleteMany();
-  // await prisma.roles.deleteMany();
-  // await prisma.roleUsers.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.roles.deleteMany();
 
   await prisma.user.createMany({
     data: [
@@ -28,19 +27,6 @@ async function main() {
   });
   await prisma.roles.createMany({
     data: [{ name: 'ADMIN' }, { name: 'CLIENT' }, { name: 'MERCHANT' }],
-  });
-
-  await prisma.roleUsers.createMany({
-    data: [
-      {
-        userId: 3,
-        roleId: 1,
-      },
-      {
-        userId: 4,
-        roleId: 2,
-      },
-    ],
   });
 }
 

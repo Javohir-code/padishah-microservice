@@ -81,8 +81,8 @@ model RoleUsers {
   id Int @default(autoincrement()) @id
   userId Int @unique
   roleId Int
-  user User @relation(fields: [userId], references: [id])
-  role Roles @relation(fields: [roleId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Roles @relation(fields: [roleId], references: [id], onDelete: Cascade)
 }
 
 model VerifyCodes {

@@ -1,0 +1,20 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  only:
+  - production
+  script:
+    - mkdir -p ~/.ssh
+    - cat ${SSH_CONFIG} > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/key.pem
+    - chmod 600 ~/.ssh/key.pem
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - ssh -o ProxyCommand="ssh -q -W %h:%p $PROXY_ADDRESS" $INSTANCE_ADDRESS 'rm -rf user-microservice; git clone --branch production git@gitlab.com:padishah/user-microservice.git'
+    - ssh -o ProxyCommand="ssh -q -W %h:%p $PROXY_ADDRESS" $INSTANCE_ADDRESS 'cd user-microservice; npm install; sudo systemctl restart app.service'
+    - cat ${TELEGRAM_MESSAGE} > telegram.sh
+    - chmod +x telegram.sh
+    - ./telegram.sh

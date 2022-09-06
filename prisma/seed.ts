@@ -4,9 +4,9 @@ import * as argon from 'argon2';
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.user.deleteMany();
-  await prisma.roles.deleteMany();
-  await prisma.roleUsers.deleteMany();
+  // await prisma.user.deleteMany();
+  // await prisma.roles.deleteMany();
+  // await prisma.roleUsers.deleteMany();
 
   await prisma.user.createMany({
     data: [

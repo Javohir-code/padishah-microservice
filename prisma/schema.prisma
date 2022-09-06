@@ -16,7 +16,7 @@ model User {
   firstName String? @db.VarChar(255) 
   lastName String? @db.VarChar(255)
   middleName String? @db.VarChar(255)
-  email String? @db.VarChar(255)
+  email String? @db.VarChar(255) @unique
   password String? @db.VarChar(255)
   msisdn String @db.VarChar(50) @unique
   status UserStatus @default(ACTIVE)
@@ -72,14 +72,14 @@ model Districts {
 model Roles {
   @@map(name: "roles")
   id Int @default(autoincrement()) @id
-  name RolesEnum
+  name RolesEnum 
   roleUser RoleUsers[]
 }
 
 model RoleUsers {
   @@map(name: "roleUsers")
   id Int @default(autoincrement()) @id
-  userId Int
+  userId Int @unique
   roleId Int
   user User @relation(fields: [userId], references: [id])
   role Roles @relation(fields: [roleId], references: [id])

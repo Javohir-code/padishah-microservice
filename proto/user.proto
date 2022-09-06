@@ -17,7 +17,10 @@ service UserController {
     rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdResponse){}
     rpc GetUserByMsisdn (GetUserByMsisdnRequest) returns (GetUserByMsisdnResponse){}
     rpc AssignRole (AssignRoleRequest) returns (google.protobuf.Empty){}
-    rpc GetRoles (google.protobuf.Empty) returns (GetRolesResponse){}
+    rpc GetRoles (GetRolesRequest) returns (GetRolesResponse){}
+    rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse){}
+    rpc LoginWithPassword(LoginWithPassRequest) returns (LoginWithPassResponse){}
+    rpc Register(RegisterRequest) returns (RegisterResponse){}
 }
 
 message CurrentUser {
@@ -67,6 +70,22 @@ message AssignRole {
 message Roles {
     int32 id = 1;
     string name = 2;
+}
+
+message UpdateStatus {
+    int32 userId = 1;
+    string status = 2;
+}
+
+message Register {
+    string firstName = 1;
+    string lastName = 2;
+    string middleName = 3;
+    string email = 4;
+    string password = 5;
+    string msisdn = 6;
+    optional string status = 7;
+    optional string language = 8;
 }
 
 message LoginRequest {
@@ -153,6 +172,34 @@ message AssignRoleRequest {
   AssignRole role = 1;
 }
 
+message GetRolesRequest {}
+
 message GetRolesResponse {
   repeated Roles roles = 1;
+}
+
+message UpdateStatusRequest {
+    UpdateStatus user = 1;
+}
+
+message UpdateStatusResponse {
+    UpdateStatus user = 1;
+}
+
+message LoginWithPassRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message LoginWithPassResponse {
+   Tokens tokens = 1;
+}
+
+message RegisterRequest {
+    Register user = 1;
+}
+
+message RegisterResponse {
+    UserDetailsDto user = 1;
+    Tokens tokens = 2;
 }

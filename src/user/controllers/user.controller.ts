@@ -69,11 +69,31 @@ export class UserController {
 
   @GrpcMethod('UserController', 'AssignRole')
   async assignRole(data: any): Promise<any> {
-    return await this.userService.assignRole(data);
+    return await this.userService.assignRole(data.role);
   }
 
   @GrpcMethod('UserController', 'GetRoles')
   async getRoles(): Promise<any> {
     return await this.userService.getRoles();
+  }
+
+  @GrpcMethod('UserController', 'UpdateStatus')
+  async updateStatus(data: any): Promise<any> {
+    return await this.userService.updateUserStatus(data.user);
+  }
+
+  @GrpcMethod('UserController', 'LoginWithPassword')
+  async loginWithPassword(data: any): Promise<any> {
+    return await this.userService.loginWithPassword(data);
+  }
+
+  @GrpcMethod('UserController', 'Register')
+  async register(data: any): Promise<any> {
+    return await this.userService.register(data.user);
+  }
+
+  @GrpcMethod('UserController', 'Register')
+  async registerMerchant(data: any): Promise<any> {
+    return await this.userService.registerMerchant(data.user);
   }
 }

@@ -20,6 +20,7 @@ import { OtpReason } from '../enums/otp-reason.enum';
 import { SecurityService } from './security.service';
 import { JwtPayload } from '../types';
 
+
 @Injectable()
 export class UserService {
   constructor(

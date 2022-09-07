@@ -382,7 +382,7 @@ export class UserService {
       });
     }
 
-    return { user: { ...user, role: user.role[0].role.name } };
+    return { user: { ...user, role: user.role[0]?.role.name } };
   }
 
   async getUserByMsisdn(msisdn: string): Promise<any> {
@@ -414,7 +414,7 @@ export class UserService {
       });
     }
 
-    return { user: { ...user, role: user.role[0].role.name } };
+    return { user: { ...user, role: user.role[0]?.role.name } };
   }
 
   async assignRole(data: any): Promise<any> {

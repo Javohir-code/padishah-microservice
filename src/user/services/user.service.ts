@@ -188,7 +188,7 @@ export class UserService {
     const payload: JwtPayload = {
       userId: user.id,
       msisdn: user.msisdn,
-      role: user.role[0].role?.name,
+      role: user.role[0]?.role?.name,
     };
     const tokens = await this.securityService.getTokens(payload);
     await this.securityService.updateRtHash(user.id, tokens.refresh_token);

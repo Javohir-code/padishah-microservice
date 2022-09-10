@@ -5,7 +5,7 @@ CREATE TYPE "OtpReason" AS ENUM ('FORGETPASSWORD', 'LOGIN');
 CREATE TYPE "OtpStatus" AS ENUM ('UNCONFIRMED', 'CONFIRMED');
 
 -- CreateEnum
-CREATE TYPE "RolesEnum" AS ENUM ('CUSTOMER', 'MERCHANT', 'ADMIN');
+CREATE TYPE "RolesEnum" AS ENUM ('CLIENT', 'MERCHANT', 'ADMIN');
 
 -- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'BLOCK', 'INACTIVE');
@@ -108,7 +108,13 @@ CREATE TABLE "verifyCodes" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "users_msisdn_key" ON "users"("msisdn");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "roleUsers_userId_key" ON "roleUsers"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "verifyCodes_msisdn_key" ON "verifyCodes"("msisdn");
@@ -126,7 +132,7 @@ ALTER TABLE "userAddresses" ADD CONSTRAINT "userAddresses_regionId_fkey" FOREIGN
 ALTER TABLE "userAddresses" ADD CONSTRAINT "userAddresses_districtId_fkey" FOREIGN KEY ("districtId") REFERENCES "districts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "roleUsers" ADD CONSTRAINT "roleUsers_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "roleUsers" ADD CONSTRAINT "roleUsers_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "roleUsers" ADD CONSTRAINT "roleUsers_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "roleUsers" ADD CONSTRAINT "roleUsers_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;

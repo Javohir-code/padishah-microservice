@@ -189,7 +189,7 @@ export class UserService {
     const payload: JwtPayload = {
       userId: user.id,
       msisdn: user.msisdn,
-      role: user.role[0].role?.name,
+      role: user.role[0]?.role?.name,
     };
     const tokens = await this.securityService.getTokens(payload);
     await this.securityService.updateRtHash(user.id, tokens.refresh_token);
@@ -404,7 +404,7 @@ export class UserService {
       });
     }
 
-    return { user: { ...user, role: user.role[0].role.name } };
+    return { user: { ...user, role: user.role[0]?.role.name } };
   }
 
   async getUserByMsisdn(msisdn: string): Promise<any> {
@@ -433,7 +433,7 @@ export class UserService {
       });
     }
 
-    return { user: { ...user, role: user.role[0].role.name } };
+    return { user: { ...user, role: user.role[0]?.role.name } };
   }
 
   async assignRole(data: any): Promise<any> {

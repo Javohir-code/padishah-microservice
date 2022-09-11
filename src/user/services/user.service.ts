@@ -20,7 +20,6 @@ import { OtpReason } from '../enums/otp-reason.enum';
 import { SecurityService } from './security.service';
 import { JwtPayload } from '../types';
 
-
 @Injectable()
 export class UserService {
   constructor(
@@ -445,6 +444,7 @@ export class UserService {
   }
 
   async loginWithPassword(data: any): Promise<any> {
+    console.log(data)
     if (data.login.indexOf('@') !== -1) {
       const user = await this.prisma.user.findFirst({
         where: { email: data.login },
@@ -489,10 +489,15 @@ export class UserService {
         },
       },
     });
-    if (user.role[0].role.name === 'CLIENT')
+    if (user?.role[0]?.role?.name === 'CLIENT')
       throw new ForbiddenException('Access Denied');
 
-    const passMatches = await argon.verify(user.password, data.password);
+    let passMatches
+    try {
+      await argon.verify(user?.password, data?.password)
+    } catch (e) {
+      
+    }
     if (!passMatches) throw new BadRequestException('Invalid Credentials');
 
     const payload: JwtPayload = {
@@ -655,4 +660,3 @@ export class UserService {
       });
   }
 }
-

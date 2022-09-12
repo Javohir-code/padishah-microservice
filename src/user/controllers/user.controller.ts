@@ -89,10 +89,17 @@ export class UserController {
 
   @GrpcMethod('UserController', 'Register')
   async register(data: any): Promise<any> {
-    return await this.userService.register(data.user);
+    console.log('user register')
+    try {
+      const response = await this.userService.register(data.user);
+      return response;
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
   }
 
-  @GrpcMethod('UserController', 'Register')
+  @GrpcMethod('UserController', 'RegisterMerchant')
   async registerMerchant(data: any): Promise<any> {
     return await this.userService.registerMerchant(data.user);
   }

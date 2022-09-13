@@ -44,30 +44,30 @@ model UserAddresses {
   comment String @db.VarChar(1000)
   domofon String? @db.VarChar(255)
   address String? @db.VarChar(255)
-  regionId Int
-  districtId Int
+  regionId String
+  districtId String
   createdAt DateTime @default(now())
   updatedAt DateTime?
   userAddress User @relation(fields: [userId], references: [id])
-  userRegion Regions @relation(fields: [regionId], references: [id])
-  userDistrict Districts @relation(fields: [districtId], references: [id])
+  // userRegion Regions @relation(fields: [regionId], references: [id])
+  // userDistrict Districts @relation(fields: [districtId], references: [id])
 }
 
-model Regions {
-  @@map(name: "regions")
-  id Int @default(autoincrement()) @id
-  name String @db.VarChar(255)
-  createdAt DateTime @default(now())
-  addresses UserAddresses[]
-}
+// model Regions {
+//   @@map(name: "regions")
+//   id Int @default(autoincrement()) @id
+//   name String @db.VarChar(255)
+//   createdAt DateTime @default(now())
+//   addresses UserAddresses[]
+// }
 
-model Districts {
-  @@map(name: "districts")
-  id Int @default(autoincrement()) @id
-  name String @db.VarChar(255)
-  createdAt DateTime @default(now())
-  addresses UserAddresses[]
-}
+// model Districts {
+//   @@map(name: "districts")
+//   id Int @default(autoincrement()) @id
+//   name String @db.VarChar(255)
+//   createdAt DateTime @default(now())
+//   addresses UserAddresses[]
+// }
 
 model Roles {
   @@map(name: "roles")

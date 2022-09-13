@@ -264,39 +264,45 @@ export class UserService {
     code: string,
     passwordDto: PasswordDto,
   ): Promise<void> {
-    const loginInfo = await this.prisma.verifyCodes.findFirst({
-      where: {
-        msisdn: msisdn,
-        expiredAt: { gt: new Date() },
-        reason: OtpReason.FORGETPASSWORD,
-        code: code,
-      },
-    })  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const loginInfo = await this.prisma.verifyCodes
+      .findFirst({
+        where: {
+          msisdn: msisdn,
+          expiredAt: { gt: new Date() },
+          reason: OtpReason.FORGETPASSWORD,
+          code: code,
+        },
+      })
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
 
     if (!loginInfo) throw new RpcException('Invalid code');
 
     if (passwordDto.password === passwordDto.repassword) {
-      await this.prisma.user.update({
-        where: { msisdn: msisdn },
-        data: {
-          password: await argon.hash(passwordDto.password),
-        },
-      })  .catch((error) => {
-        throw new RpcException(error.message);
-      });
+      await this.prisma.user
+        .update({
+          where: { msisdn: msisdn },
+          data: {
+            password: await argon.hash(passwordDto.password),
+          },
+        })
+        .catch((error) => {
+          throw new RpcException(error.message);
+        });
       return;
     }
     throw new RpcException('passwords are not match!');
   }
 
   async findUserByMsisdn(msisdn: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({
-      where: { msisdn: msisdn },
-    })  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const user = await this.prisma.user
+      .findUnique({
+        where: { msisdn: msisdn },
+      })
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
     if (!user) {
       throw new NotFoundException('user not found with given phone number');
     }
@@ -304,11 +310,13 @@ export class UserService {
   }
 
   private async findUserMsisdnWise(msisdn: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { msisdn: msisdn },
-    })  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const user = await this.prisma.user
+      .findUnique({
+        where: { msisdn: msisdn },
+      })
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
     if (!user) {
       return true;
     } else {
@@ -336,40 +344,48 @@ export class UserService {
   }
 
   async refreshTokens(userId: number, rt: string): Promise<any> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        role: {
-          select: {
-            role: {
-              select: {
-                name: true,
+    const user = await this.prisma.user
+      .findUnique({
+        where: { id: userId },
+        include: {
+          role: {
+            select: {
+              role: {
+                select: {
+                  name: true,
+                },
               },
             },
           },
         },
-      },
-    })  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+      })
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
     if (!user || !user.refreshToken)
       throw new ForbiddenException('Access Denied!');
 
-    const rtMatches = await argon.verify(user.refreshToken, rt)  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const rtMatches = await argon
+      .verify(user.refreshToken, rt)
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
     if (!rtMatches) throw new ForbiddenException('Access Denied!!!');
     const payload: JwtPayload = {
       userId: user.id,
       msisdn: user.msisdn,
       role: user.role[0].role?.name,
     };
-    const tokens = await this.securityService.getTokens(payload)  .catch((error) => {
-      throw new RpcException(error.message);
-    });
-    await this.securityService.updateRtHash(user.id, tokens.refresh_token)  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const tokens = await this.securityService
+      .getTokens(payload)
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
+    await this.securityService
+      .updateRtHash(user.id, tokens.refresh_token)
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
     const token = {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
@@ -437,43 +453,93 @@ export class UserService {
   }
 
   async assignRole(data: any): Promise<any> {
-    const role = await this.prisma.roles.findFirst({
-      where: { id: data.roleId },
-    })  .catch((error) => {
-      throw new RpcException(error.message);
-    });
-    await this.prisma.roleUsers.update({
-      where: {
-        userId: data.userId,
-      },
-      data: { roleId: role.id },
-    })  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const role = await this.prisma.roles
+      .findFirst({
+        where: { id: data.roleId },
+      })
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
+    await this.prisma.roleUsers
+      .update({
+        where: {
+          userId: data.userId,
+        },
+        data: { roleId: role.id },
+      })
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
   }
 
   async getRoles(): Promise<any> {
-    const roles = await this.prisma.roles.findMany()  .catch((error) => {
+    const roles = await this.prisma.roles.findMany().catch((error) => {
       throw new RpcException(error.message);
     });
     return { roles };
   }
 
   async updateUserStatus(data: any): Promise<any> {
-    const updated = await this.prisma.user.update({
-      where: { id: data.userId },
-      data: { status: data.status },
-    })  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const updated = await this.prisma.user
+      .update({
+        where: { id: data.userId },
+        data: { status: data.status },
+      })
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
     const user = { userId: updated.id, status: updated.status };
     return { user };
   }
 
   async loginWithPassword(data: any): Promise<any> {
     if (data.login.indexOf('@') !== -1) {
-      const user = await this.prisma.user.findFirst({
-        where: { email: data.login },
+      const user = await this.prisma.user
+        .findFirst({
+          where: { email: data.login },
+          include: {
+            role: {
+              include: {
+                role: {
+                  select: { name: true },
+                },
+              },
+            },
+          },
+        })
+        .catch((error) => {
+          throw new RpcException(error.message);
+        });
+      if (user.role[0].role.name === 'CLIENT')
+        throw new ForbiddenException('Access Denied');
+
+      const passMatches = await argon
+        .verify(user.password, data.password)
+        .catch((error) => {
+          throw new RpcException(error.message);
+        });
+      if (!passMatches) throw new RpcException('Invalid Credentials');
+
+      const payload: JwtPayload = {
+        userId: user.id,
+        msisdn: user.msisdn,
+        role: user.role[0].role?.name,
+      };
+      const tokens = await this.securityService
+        .getTokens(payload)
+        .catch((error) => {
+          throw new RpcException(error.message);
+        });
+      const token = {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+      };
+      return { tokens: token };
+    }
+
+    const user = await this.prisma.user
+      .findFirst({
+        where: { msisdn: data.login },
         include: {
           role: {
             include: {
@@ -483,52 +549,18 @@ export class UserService {
             },
           },
         },
-      })  .catch((error) => {
+      })
+      .catch((error) => {
         throw new RpcException(error.message);
       });
-      if (user.role[0].role.name === 'CLIENT')
-        throw new ForbiddenException('Access Denied');
-
-      const passMatches = await argon.verify(user.password, data.password)  .catch((error) => {
-        throw new RpcException(error.message);
-      });
-      if (!passMatches) throw new RpcException('Invalid Credentials');
-
-      const payload: JwtPayload = {
-        userId: user.id,
-        msisdn: user.msisdn,
-        role: user.role[0].role?.name,
-      };
-      const tokens = await this.securityService.getTokens(payload)  .catch((error) => {
-        throw new RpcException(error.message);
-      });
-      const token = {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-      };
-      return { tokens: token };
-    }
-
-    const user = await this.prisma.user.findFirst({
-      where: { msisdn: data.login },
-      include: {
-        role: {
-          include: {
-            role: {
-              select: { name: true },
-            },
-          },
-        },
-      },
-    })  .catch((error) => {
-      throw new RpcException(error.message);
-    });
     if (user.role[0].role.name === 'CLIENT')
       throw new ForbiddenException('Access Denied');
 
-    const passMatches = await argon.verify(user.password, data.password)  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const passMatches = await argon
+      .verify(user.password, data.password)
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
     if (!passMatches) throw new RpcException('Invalid Credentials');
 
     const payload: JwtPayload = {
@@ -536,9 +568,11 @@ export class UserService {
       msisdn: user.msisdn,
       role: user.role[0].role?.name,
     };
-    const tokens = await this.securityService.getTokens(payload)  .catch((error) => {
-      throw new RpcException(error.message);
-    });
+    const tokens = await this.securityService
+      .getTokens(payload)
+      .catch((error) => {
+        throw new RpcException(error.message);
+      });
     const token = {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,

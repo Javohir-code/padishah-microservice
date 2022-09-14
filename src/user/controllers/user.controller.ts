@@ -96,4 +96,9 @@ export class UserController {
   async registerMerchant(data: any): Promise<any> {
     return await this.userService.registerMerchant(data.user);
   }
+
+  @GrpcMethod('UserController', 'UpdateUser')
+  async updateUser(data: any): Promise<any> {
+    return await this.userService.updateUserDetails(data.user, data.userId);
+  }
 }

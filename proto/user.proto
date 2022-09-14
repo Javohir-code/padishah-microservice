@@ -21,6 +21,7 @@ service UserController {
     rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse){}
     rpc LoginWithPassword(LoginWithPassRequest) returns (LoginWithPassResponse){}
     rpc Register(RegisterRequest) returns (RegisterResponse){}
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse){}
 }
 
 message CurrentUser {
@@ -86,6 +87,16 @@ message Register {
     string msisdn = 6;
     optional string status = 7;
     optional string language = 8;
+}
+
+message UpdateUser {
+   optional int32 userId = 1;
+   optional string firstName = 2;
+   optional string lastName = 3;
+   optional string middleName = 4;
+   optional string email = 5;
+   optional string msisdn = 6;
+   optional string language = 7;
 }
 
 message LoginRequest {
@@ -202,4 +213,13 @@ message RegisterRequest {
 message RegisterResponse {
     UserDetailsDto user = 1;
     Tokens tokens = 2;
+}
+
+message UpdateUserRequest {
+    UpdateUser user = 1;
+    int32 userId = 2;
+}
+
+message UpdateUserResponse {
+    UserReturn user = 1;
 }

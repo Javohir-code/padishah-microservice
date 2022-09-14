@@ -653,4 +653,21 @@ export class UserService {
         });
       });
   }
+
+  async updateUserDetails(data: any, userId: number): Promise<any> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName: data?.firstName,
+        lastName: data?.lastName,
+        middleName: data?.middleName,
+        email: data?.middleName,
+        msisdn: data?.msisdn,
+        language: data?.language,
+      },
+    });
+    delete user.password;
+
+    return { user };
+  }
 }

@@ -605,6 +605,7 @@ export class UserService {
         },
       })
       .catch((error) => {
+        console.log(error);
         throw new RpcException(error.message);
       });
     delete newUser.password;

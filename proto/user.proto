@@ -105,7 +105,7 @@ message VerifyCodeResponse {
 
 message AddUserRequest {
     CurrentUser userId = 1;
-    UserDetailsDto user = 2; 
+    UserDetailsDto user = 2;
 }
 message AddUserResponse {
    UserReturn user = 1;
@@ -202,4 +202,64 @@ message RegisterRequest {
 message RegisterResponse {
     UserDetailsDto user = 1;
     Tokens tokens = 2;
+}
+
+// address service
+service AddressController {
+    rpc GetAll (GetAllAddressRequest) returns (GetAllAddressResponse){}
+    rpc Create (AddressRequest) returns (CreateAddressResponse){}
+    rpc Update (AddressRequest) returns (UpdateAddressResponse){}
+    rpc Delete (AddressDeleteRequest) returns (DeleteAddressResponse){}
+}
+
+message GetAllAddressRequest {
+    int32 userId = 1;
+}
+
+message AddressDeleteRequest {
+    int32 userId = 1;
+    int32 id = 2;
+}
+
+message AddressRequest {
+    int32 userId = 1;
+    string address = 2;
+    int32 regionId = 3;
+    int32 districtId = 4;
+    optional string postalCode = 5;
+    optional string comment = 6;
+    optional bool default = 7;
+    optional int32 id = 8;
+}
+
+message AddressResponse {
+    string address = 1;
+    int32 regionId = 2;
+    int32 districtId = 3;
+    optional string postalCode = 4;
+    optional string comment = 5;
+    optional bool default = 6;
+    optional string createdAt = 7;
+    optional string updatedAt = 8;
+    int32 id = 9;
+}
+
+message CreateAddressResponse {
+    AddressResponse result = 1;
+    repeated string errors = 2;
+}
+
+message UpdateAddressResponse {
+    AddressResponse result = 1;
+    repeated string errors = 2;
+}
+
+message DeleteAddressResponse {
+    bool status = 1;
+    repeated string errors = 2;
+}
+
+message GetAllAddressResponse {
+    repeated AddressResponse result = 1;
+    repeated string errors = 2;
 }

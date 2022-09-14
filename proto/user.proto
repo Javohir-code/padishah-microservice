@@ -116,7 +116,7 @@ message VerifyCodeResponse {
 
 message AddUserRequest {
     CurrentUser userId = 1;
-    UserDetailsDto user = 2; 
+    UserDetailsDto user = 2;
 }
 message AddUserResponse {
    UserReturn user = 1;

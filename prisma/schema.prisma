@@ -34,37 +34,40 @@ model UserAddresses {
   @@map(name: "userAddresses")
   id Int @default(autoincrement()) @id
   userId Int
-  address String @db.VarChar(255)
-  regionId Int
-  districtId Int
-
-  comment String? @db.VarChar(1000)
-  postalCode String? @db.VarChar(255)
-  default Boolean?
-
+  latitude String @db.VarChar(255)
+  longitude String @db.VarChar(255)
+  name String? @db.VarChar(255)
+  street String? @db.VarChar(255)
+  city String? @db.VarChar(255)
+  home String? @db.VarChar(255)
+  apartment String? @db.VarChar(255)
+  comment String @db.VarChar(1000)
+  domofon String? @db.VarChar(255)
+  address String? @db.VarChar(255)
+  regionId String
+  districtId String
   createdAt DateTime @default(now())
   updatedAt DateTime?
-
-  user User @relation(fields: [userId], references: [id])
-  region Regions @relation(fields: [regionId], references: [id])
-  district Districts @relation(fields: [districtId], references: [id])
+  userAddress User @relation(fields: [userId], references: [id])
+  // userRegion Regions @relation(fields: [regionId], references: [id])
+  // userDistrict Districts @relation(fields: [districtId], references: [id])
 }
 
-model Regions {
-  @@map(name: "regions")
-  id Int @default(autoincrement()) @id
-  name String @db.VarChar(255)
-  createdAt DateTime @default(now())
-  addresses UserAddresses[]
-}
+// model Regions {
+//   @@map(name: "regions")
+//   id Int @default(autoincrement()) @id
+//   name String @db.VarChar(255)
+//   createdAt DateTime @default(now())
+//   addresses UserAddresses[]
+// }
 
-model Districts {
-  @@map(name: "districts")
-  id Int @default(autoincrement()) @id
-  name String @db.VarChar(255)
-  createdAt DateTime @default(now())
-  addresses UserAddresses[]
-}
+// model Districts {
+//   @@map(name: "districts")
+//   id Int @default(autoincrement()) @id
+//   name String @db.VarChar(255)
+//   createdAt DateTime @default(now())
+//   addresses UserAddresses[]
+// }
 
 model Roles {
   @@map(name: "roles")

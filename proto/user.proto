@@ -75,7 +75,10 @@ message Roles {
 
 message UpdateStatus {
     int32 userId = 1;
-    string status = 2;
+    optional string status = 2;
+    optional string firstName = 3;
+    optional string lastName = 4;
+    optional string msisdn = 5;
 }
 
 message Register {

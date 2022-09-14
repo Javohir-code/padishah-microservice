@@ -553,20 +553,11 @@ export class UserService {
       .catch((error) => {
         throw new RpcException(error.message);
       });
-    if (user?.role[0]?.role?.name === 'CLIENT')
+    if (user.role[0].role.name === 'CLIENT')
       throw new ForbiddenException('Access Denied');
 
-    // <<<<<<< HEAD
-    //     let passMatches
-    //     try {
-    //       await argon.verify(user?.password, data?.password)
-    //     } catch (e) {
-    //
-    //     }
-    //     if (!passMatches) throw new BadRequestException('Invalid Credentials');
-    // =======
     const passMatches = await argon
-      .verify(user?.password, data?.password)
+      .verify(user.password, data.password)
       .catch((error) => {
         throw new RpcException(error.message);
       });
